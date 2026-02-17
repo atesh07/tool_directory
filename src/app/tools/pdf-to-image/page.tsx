@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import ToolClient from "./ToolClient";
-import { ShieldCheck, Zap, Lock, Smartphone, Download, Globe } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Free PDF to Image Converter | Instant & Private",
@@ -9,96 +8,64 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
-      <div className="max-w-5xl mx-auto px-4 py-5">
-        {/* Header Section */}
-        <div className="text-center mb-5">
-         
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6">
-            PDF to <span className="text-blue-600">Image</span>
-          </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Transform your PDF documents into high-resolution JPGs safely. 
-            No uploads, no servers, just instant conversion.
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      
+      {/* Decorative Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+      </div>
 
-        {/* Main Tool Component */}
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden mb-20">
+      {/* Hero Section */}
+      <section className="text-center pt-6 pb-6 px-4">
+        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6">
+          PDF to <span className="text-indigo-600">Image</span>
+        </h1>
+        <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          Transform your PDF documents into high-resolution JPGs safely. 
+          No uploads, no servers, just instant conversion right in your browser.
+        </p>
+      </section>
+
+      {/* Main Tool Area */}
+      <section className="max-w-4xl mx-auto px-4 relative z-10 pb-12">
+        <div className="bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl p-8 border border-white/20 ring-1 ring-slate-900/5">
           <ToolClient />
         </div>
+      </section>
 
-        {/* Feature Grid */}
-        <div className="grid md:grid-cols-3 gap-8 mb-20">
-          <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
-            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
-              <Zap className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">Lightning Fast</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Conversion happens in milliseconds because it uses your own computer's power. No waiting for server queues.
-            </p>
-          </div>
-
-          <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
-            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center mb-4">
-              <Lock className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">Maximum Privacy</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Your files never leave your device. We don't see your data, and we don't store your PDFs on any server.
-            </p>
-          </div>
-
-          <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
-            <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4">
-              <Smartphone className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">No Install Required</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Works directly in your Chrome, Safari, or Firefox browser. No bloated software or plugins needed.
-            </p>
-          </div>
+      {/* Feature Grid */}
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <div className="grid md:grid-cols-3 gap-8 text-center">
+          <FeatureCard 
+            icon="⚡" 
+            title="Lightning Fast" 
+            desc="Conversion happens in milliseconds using your computer's power. No server queues." 
+          />
+          <FeatureCard 
+            icon="🔒" 
+            title="Maximum Privacy" 
+            desc="Your files never leave your device. We don't see or store your sensitive data." 
+          />
+          <FeatureCard 
+            icon="📱" 
+            title="No Install" 
+            desc="Works directly in your browser. No bloated software or plugins required." 
+          />
         </div>
+      </section>
+    </div>
+  );
+}
 
-        {/* How it Works / FAQ Section */}
-        <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-16 text-white relative overflow-hidden">
-          <div className="relative z-10 max-w-3xl">
-            <h2 className="text-3xl md:text-4xl font-bold mb-8">How it works</h2>
-            <div className="space-y-6">
-              <div className="flex gap-4">
-                <div className="flex-none w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold">1</div>
-                <div>
-                  <h4 className="font-bold text-lg">Select your PDF</h4>
-                  <p className="text-slate-400">Click the upload box to choose a file from your computer or phone.</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="flex-none w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold">2</div>
-                <div>
-                  <h4 className="font-bold text-lg">Instant Rendering</h4>
-                  <p className="text-slate-400">Our tool reads the PDF pages and renders them as high-quality images immediately.</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="flex-none w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold">3</div>
-                <div>
-                  <h4 className="font-bold text-lg">Download individual pages</h4>
-                  <p className="text-slate-400">Pick the specific pages you need and save them as JPG files to your gallery.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Decorative background element */}
-          <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl"></div>
-        </div>
-
-        {/* Footer */}
-        <footer className="mt-20 text-center text-slate-400 text-sm border-t border-slate-200 pt-8">
-          <p>© {new Date().getFullYear()} PDF2IMG Tool • Built with Next.js • Privacy Guaranteed</p>
-        </footer>
+function FeatureCard({ icon, title, desc }: { icon: string; title: string; desc: string }) {
+  return (
+    <div className="p-8 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+      <div className="text-4xl mb-4 bg-indigo-50 w-16 h-16 flex items-center justify-center rounded-2xl mx-auto">
+        {icon}
       </div>
+      <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
+      <p className="text-slate-600 leading-relaxed">{desc}</p>
     </div>
   );
 }
