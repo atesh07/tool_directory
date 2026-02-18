@@ -1,8 +1,15 @@
 import React from 'react'
+import HeroSection from './Sections/HeroSection/HeroSection'
+import PopularTools from './Sections/PopularTools/PopularTools'
+import Tutorial from './Sections/Tutorial/Tutorial'
 
 const page = () => {
   return (
-    <div className='text-5xl'>page</div>
+    <div>
+        <HeroSection/>
+        <PopularTools/>
+        <Tutorial/>
+    </div>
   )
 }
 
