@@ -9,7 +9,8 @@ import {
   Trash2, 
   Download, 
   Image as ImageIcon, 
-  GripVertical 
+  GripVertical,
+  Lock 
 } from "lucide-react";
 
 export default function ToolClient() {
@@ -142,7 +143,7 @@ export default function ToolClient() {
       {/* Upload Area */}
       <div
         onClick={() => fileInputRef.current?.click()}
-        className="group border-3 border-dashed border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400 rounded-3xl p-10 text-center cursor-pointer transition-all duration-300 ease-in-out"
+        className="group border-2 border-dashed border-slate-300 bg-white hover:bg-slate-50/50 hover:border-slate-400 max-w-3xl mx-auto rounded-none py-16 px-10 text-center cursor-pointer transition-all duration-300 ease-in-out shadow-sm"
       >
         <input
           type="file"
@@ -153,17 +154,16 @@ export default function ToolClient() {
           className="hidden"
         />
 
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <div className="p-4 bg-white rounded-full shadow-md group-hover:scale-110 transition-transform">
-            <Upload className="w-8 h-8 text-indigo-600" />
+        <div className="flex flex-col items-center justify-center space-y-5">
+          <p className="text-slate-500 text-sm">Drop image files here or</p>
+          
+          <div className="bg-[#0066cc] hover:bg-[#005bb5] text-white font-semibold text-lg py-3 px-12 rounded-lg transition-colors shadow-sm">
+            Select Images
           </div>
-          <div>
-            <p className="text-xl font-semibold text-slate-700">
-              Click to upload or drag images here
-            </p>
-            <p className="text-slate-500 mt-1 text-sm">
-              JPG, PNG supported
-            </p>
+
+          <div className="flex items-center gap-1.5 text-slate-400 text-xs pt-2">
+            <Lock className="w-3.5 h-3.5" />
+            <span>Your files are secure</span>
           </div>
         </div>
       </div>
@@ -246,11 +246,11 @@ export default function ToolClient() {
           onClick={convertToPdf}
           disabled={loading}
           className={`
-            w-full py-4 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-200 flex items-center justify-center gap-2 transition-all transform active:scale-[0.98]
+            w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 transition-colors shadow-sm
             ${
               loading
                 ? "bg-slate-300 text-slate-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:opacity-95 hover:shadow-indigo-500/25"
+                : "bg-[#0066cc] hover:bg-[#005bb5] text-white"
             }
           `}
         >

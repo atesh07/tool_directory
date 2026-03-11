@@ -74,7 +74,7 @@ const PopularTools = () => {
   }, [searchQuery]);
 
   return (
-    <section className="w-full py-14 bg-gradient-to-b from-slate-50 to-white min-h-screen">
+    <section className="w-full py-14 bg-slate-50">
       <div className="max-w-6xl mx-auto px-6">
         
         {/* Heading & Search Bar */}
@@ -89,11 +89,11 @@ const PopularTools = () => {
           {/* Search Input */}
           <div className="relative max-w-3xl mx-auto group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-black group-focus-within:text-indigo-500 transition-colors" />
+              <Search className="h-5 w-5 text-black group-focus-within:text-[#0066cc] transition-colors" />
             </div>
             <input
               type="text"
-              className="block w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-full text-black placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm hover:shadow-md"
+              className="block w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-full text-black placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0066cc] focus:border-transparent transition-all shadow-sm hover:shadow-md"
               placeholder="Search for tools (e.g. Image to PDF)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -118,15 +118,15 @@ const PopularTools = () => {
                     key={tool.title} // Used title as key for stable animations
                   >
                     <Link href={tool.href} className="block h-full">
-                      <div className="h-full border border-slate-200 rounded-2xl p-6 bg-white hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 group">
+                      <div className="h-full border border-slate-200 rounded-2xl p-6 bg-white hover:border-[#0066cc]/30 hover:shadow-xl hover:shadow-[#0066cc]/10 transition-all duration-300 group">
                         
                         {/* Icon Container with Group Hover */}
-                        <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 mb-5 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
+                        <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#0066cc]/10 text-[#0066cc] mb-5 group-hover:bg-[#0066cc] group-hover:text-white transition-colors duration-300">
                           <Icon size={24} />
                         </div>
 
                         {/* Text Content */}
-                        <h3 className="font-semibold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors">
+                        <h3 className="font-semibold text-slate-900 mb-2 group-hover:text-[#0066cc] transition-colors">
                           {tool.title}
                         </h3>
                         <p className="text-sm text-slate-600 leading-relaxed">

@@ -11,7 +11,8 @@ import {
   Download, 
   FileCheck, 
   GripVertical,
-  MousePointer2
+  MousePointer2,
+  Lock
 } from "lucide-react";
 
 // PDF.js Worker Configuration
@@ -133,10 +134,10 @@ export default function ToolClient() {
         onDragLeave={onDragContainer}
         onDrop={onDropContainer}
         onClick={() => fileInputRef.current?.click()}
-        className={`group border-3 border-dashed rounded-3xl p-12 text-center cursor-pointer transition-all duration-300 ease-in-out
+        className={`group border-2 border-dashed max-w-3xl mx-auto py-16 px-10 rounded-none text-center cursor-pointer transition-all duration-300 ease-in-out bg-white shadow-sm
           ${isDragging 
-            ? "border-indigo-500 bg-indigo-100 scale-[1.01]" 
-            : "border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400"}`}
+            ? "border-[#0066cc] bg-blue-50/30 scale-[1.01]" 
+            : "border-slate-300 hover:bg-slate-50/50 hover:border-slate-400"}`}
       >
         <input
           type="file"
@@ -147,16 +148,16 @@ export default function ToolClient() {
           className="hidden"
         />
 
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <div className={`p-5 bg-white rounded-2xl shadow-md transition-transform duration-500 
-            ${isDragging ? "rotate-12 scale-110" : "group-hover:scale-110"}`}>
-            {isDragging ? <MousePointer2 className="w-10 h-10 text-indigo-600" /> : <Upload className="w-10 h-10 text-indigo-600" />}
+        <div className="flex flex-col items-center justify-center space-y-5">
+          <p className="text-slate-500 text-sm">{isDragging ? "Release to upload" : "Drop PDF files here or"}</p>
+          
+          <div className="bg-[#0066cc] hover:bg-[#005bb5] text-white font-semibold text-lg py-3 px-12 rounded-lg transition-colors shadow-sm">
+            Select PDFs
           </div>
-          <div>
-            <p className="text-xl font-bold text-slate-700">
-              {isDragging ? "Release to upload" : "Click or drag PDFs here"}
-            </p>
-            <p className="text-slate-500 mt-1">Single or multiple files supported</p>
+
+          <div className="flex items-center gap-1.5 text-slate-400 text-xs pt-2">
+            <Lock className="w-3.5 h-3.5" />
+            <span>Your files are secure</span>
           </div>
         </div>
       </div>
@@ -237,10 +238,10 @@ export default function ToolClient() {
         <button
           onClick={mergePdfs}
           disabled={items.length < 2 || loading}
-          className={`w-full py-5 rounded-[2rem] font-black text-xl shadow-2xl transition-all transform active:scale-[0.98] flex items-center justify-center gap-3
+          className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 transition-colors shadow-sm
             ${items.length < 2 || loading
               ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-              : "bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:opacity-95 hover:shadow-indigo-500/40 hover:-translate-y-0.5"}`}
+              : "bg-[#0066cc] hover:bg-[#005bb5] text-white"}`}
         >
           {loading ? (
             <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />

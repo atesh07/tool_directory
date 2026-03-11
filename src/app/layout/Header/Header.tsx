@@ -45,7 +45,7 @@ const Header = () => {
           
           {/* Logo */}
           <Link href="/" onClick={closeMobileMenu}>
-            <span className="text-2xl font-bold text-blue-600/90 cursor-pointer">
+            <span className="text-2xl font-bold text-[#0066cc] cursor-pointer">
               ToolsTree
             </span>
           </Link>
@@ -59,7 +59,7 @@ const Header = () => {
               onMouseEnter={() => setShowTools(true)}
               onMouseLeave={() => setShowTools(false)}
             >
-              <div className="flex items-center gap-1 cursor-pointer font-medium hover:text-blue-600 transition">
+              <div className="flex items-center gap-1 cursor-pointer font-medium hover:text-[#0066cc] transition">
                 All Tools <ChevronDown size={16} />
               </div>
 
@@ -74,7 +74,7 @@ const Header = () => {
                         onClick={() => setShowTools(false)}
                         className="flex items-center gap-3 hover:bg-gray-100 p-2 rounded-lg text-sm text-black font-medium transition"
                       >
-                        <Icon size={18} className="text-blue-600" />
+                        <Icon size={18} className="text-[#0066cc]" />
                         {tool.name}
                       </Link>
                     );
@@ -84,30 +84,30 @@ const Header = () => {
             </div>
 
             {/* Desktop Quick Links */}
-            <Link href="/tools/image-to-pdf" className="hover:text-blue-600 font-medium transition text-sm lg:text-base">
+            <Link href="/tools/image-to-pdf" className="hover:text-[#0066cc] font-medium transition text-sm lg:text-base">
               Image to PDF
             </Link>
-            <Link href="/tools/pdf-to-image" className="hover:text-blue-600 font-medium transition text-sm lg:text-base">
+            <Link href="/tools/pdf-to-image" className="hover:text-[#0066cc] font-medium transition text-sm lg:text-base">
               PDF to Image
             </Link>
-            <Link href="/tools/delete-pdf" className="hover:text-blue-600 font-medium transition text-sm lg:text-base">
+            <Link href="/tools/delete-pdf" className="hover:text-[#0066cc] font-medium transition text-sm lg:text-base">
               Delete PDF
             </Link>
-            <Link href="/tools/word-to-pdf" className="hover:text-blue-600 font-medium transition text-sm lg:text-base">
+            <Link href="/tools/word-to-pdf" className="hover:text-[#0066cc] font-medium transition text-sm lg:text-base">
               Word to PDF
             </Link>
           </nav>
 
           {/* Desktop Right Section */}
           <div className="hidden md:flex items-center gap-4">
-            <button className="px-5 py-2 cursor-pointer text-white bg-blue-600 rounded-md hover:bg-blue-700 transition font-medium">
+            <button className="px-5 py-2 cursor-pointer text-white bg-[#0066cc] rounded-md hover:bg-[#005bb5] transition font-medium">
               Donate
             </button>
           </div>
 
           {/* Mobile Menu Toggle & Donate Button */}
           <div className="flex md:hidden items-center gap-3">
-            <button className="px-4 py-1.5 cursor-pointer text-white bg-blue-600 rounded-md hover:bg-blue-700 transition text-sm font-medium">
+            <button className="px-4 py-1.5 cursor-pointer text-white bg-[#0066cc] rounded-md hover:bg-[#005bb5] transition text-sm font-medium">
               Donate
             </button>
             <button
@@ -150,7 +150,7 @@ const Header = () => {
                       onClick={closeMobileMenu}
                       className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm text-gray-900 font-medium transition border border-gray-100"
                     >
-                      <Icon size={18} className="text-blue-600" />
+                      <Icon size={18} className="text-[#0066cc]" />
                       {tool.name}
                     </Link>
                   );
@@ -161,16 +161,16 @@ const Header = () => {
 
           {/* Mobile Quick Links */}
           <div className="flex flex-col gap-5 py-2  text-base text-black">
-            <Link href="/tools/image-to-pdf" onClick={closeMobileMenu} className="hover:text-blue-600 transition">
+            <Link href="/tools/image-to-pdf" onClick={closeMobileMenu} className="hover:text-[#0066cc] transition">
               Image to PDF
             </Link>
-            <Link href="/tools/pdf-to-image" onClick={closeMobileMenu} className="hover:text-blue-600 transition">
+            <Link href="/tools/pdf-to-image" onClick={closeMobileMenu} className="hover:text-[#0066cc] transition">
               PDF to Image
             </Link>
-            <Link href="/tools/delete-pdf" onClick={closeMobileMenu} className="hover:text-blue-600 transition">
+            <Link href="/tools/delete-pdf" onClick={closeMobileMenu} className="hover:text-[#0066cc] transition">
               Delete PDF Page
             </Link>
-            <Link href="/tools/word-to-pdf" onClick={closeMobileMenu} className="hover:text-blue-600 transition">
+            <Link href="/tools/word-to-pdf" onClick={closeMobileMenu} className="hover:text-[#0066cc] transition">
               Word to PDF
             </Link>
           </div>

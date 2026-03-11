@@ -47,7 +47,7 @@ export default function HowItWorks() {
         {/* STEPS SECTION */}
         <div className="relative max-w-5xl mx-auto">
           {/* Connecting Line (Desktop Only) */}
-          <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-transparent via-blue-200 to-transparent -z-10" />
+          <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-transparent via-[#0066cc]/30 to-transparent -z-10" />
 
           <div className="grid md:grid-cols-3 gap-12 md:gap-6 relative">
             {steps.map((step, index) => {
@@ -64,11 +64,11 @@ export default function HowItWorks() {
                 >
                   {/* Number & Icon Wrapper */}
                   <div className="relative mb-6">
-                    <div className="w-24 h-24 bg-white rounded-full shadow-lg border-4 border-slate-50 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:border-blue-100 transition-transform duration-300">
+                    <div className="w-24 h-24 bg-white rounded-full shadow-lg border-4 border-slate-50 flex items-center justify-center text-[#0066cc] group-hover:scale-110 group-hover:border-[#0066cc]/20 transition-transform duration-300">
                       <Icon size={36} strokeWidth={1.5} />
                     </div>
                     {/* Floating Step Number */}
-                    <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center text-sm font-bold shadow-md">
+                    <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-[#0066cc] text-white flex items-center justify-center text-sm font-bold shadow-md">
                       {step.number}
                     </div>
                   </div>

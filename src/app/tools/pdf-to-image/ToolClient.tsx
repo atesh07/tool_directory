@@ -8,7 +8,8 @@ import {
   RefreshCcw, 
   CheckCircle2, 
   Trash2, 
-  MousePointer2 
+  MousePointer2,
+  Lock 
 } from "lucide-react";
 
 export default function ToolClient() {
@@ -91,13 +92,13 @@ export default function ToolClient() {
           onDragOver={onDragOver}
           onDragLeave={() => setIsDragging(false)}
           onDrop={onDrop}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !loading && fileInputRef.current?.click()}
           className={`
-            border-3 border-dashed rounded-3xl p-12 md:p-20 text-center cursor-pointer 
-            transition-all duration-300 group
+            group border-2 border-dashed max-w-3xl mx-auto bg-white rounded-none py-16 px-10 text-center cursor-pointer 
+            transition-all duration-300 shadow-sm
             ${isDragging || loading 
-              ? "border-indigo-500 bg-indigo-50/80" 
-              : "border-indigo-100 hover:border-indigo-400 hover:bg-indigo-50/50"}
+              ? "border-[#0066cc] bg-blue-50/30" 
+              : "border-slate-300 hover:border-slate-400 hover:bg-slate-50/50"}
           `}
         >
           <input
@@ -108,24 +109,13 @@ export default function ToolClient() {
             className="hidden"
           />
 
-          <div className="flex flex-col items-center">
-            <div className={`w-20 h-20 bg-white shadow-lg text-indigo-600 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-500 
-              ${isDragging ? "scale-110 rotate-6" : "group-hover:scale-110"}`}>
-              {loading ? (
-                <RefreshCcw className="w-10 h-10 animate-spin" />
-              ) : isDragging ? (
-                <MousePointer2 className="w-10 h-10" />
-              ) : (
-                <Upload className="w-10 h-10" />
-              )}
-            </div>
-
+          <div className="flex flex-col items-center justify-center space-y-5">
             {loading ? (
               <div className="space-y-4 w-full max-w-xs">
                 <p className="text-xl font-bold text-slate-800">Processing Pages...</p>
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                    <div 
-                    className="h-full bg-indigo-600 transition-all duration-300" 
+                    className="h-full bg-[#0066cc] transition-all duration-300" 
                     style={{ width: `${(progress.current / progress.total) * 100}%` }}
                    />
                 </div>
@@ -135,10 +125,16 @@ export default function ToolClient() {
               </div>
             ) : (
               <>
-                <h3 className="text-2xl font-bold text-slate-800 mb-2">
-                  {isDragging ? "Drop to convert" : "Upload PDF to Image"}
-                </h3>
-                <p className="text-slate-500">Every page will become a high-quality JPG</p>
+                <p className="text-slate-500 text-sm">{isDragging ? "Drop to extract images" : "Drop PDF file here or"}</p>
+                
+                <div className="bg-[#0066cc] hover:bg-[#005bb5] text-white font-semibold text-lg py-3 px-12 rounded-lg transition-colors shadow-sm">
+                  Select PDF
+                </div>
+
+                <div className="flex items-center gap-1.5 text-slate-400 text-xs pt-2">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Your files are secure</span>
+                </div>
               </>
             )}
           </div>
