@@ -26,7 +26,7 @@ const Header = () => {
     { name: "Merge PDF", path: "/tools/merge-pdf", icon: Combine },
     { name: "Split PDF", path: "/tools/split-pdf", icon: Scissors },
     { name: "JPG to PDF", path: "/tools/jpg-to-pdf", icon: FileImage },
-    { name: "Delete PDF Page", path: "/tools/delete-pdf", icon: FilePlus },
+    { name: "Remove Pages", path: "/tools/remove-pages", icon: FilePlus },
     { name: "Word to PDF", path: "/tools/word-to-pdf", icon: FileText },
     { name: "PDF to Word", path: "/tools/pdf-to-word", icon: FileText },
     { name: "Rotate PDF", path: "/tools/rotate-pdf", icon: RotateCw },
@@ -90,8 +90,8 @@ const Header = () => {
             <Link href="/tools/pdf-to-image" className="hover:text-blue-600 font-medium transition text-sm lg:text-base">
               PDF to Image
             </Link>
-            <Link href="/tools/delete-pdf" className="hover:text-blue-600 font-medium transition text-sm lg:text-base">
-              Delete PDF
+            <Link href="/tools/remove-pages" className="hover:text-blue-600 font-medium transition text-sm lg:text-base">
+              Remove Pages
             </Link>
             <Link href="/tools/word-to-pdf" className="hover:text-blue-600 font-medium transition text-sm lg:text-base">
               Word to PDF
@@ -167,8 +167,8 @@ const Header = () => {
             <Link href="/tools/pdf-to-image" onClick={closeMobileMenu} className="hover:text-blue-600 transition">
               PDF to Image
             </Link>
-            <Link href="/tools/delete-pdf" onClick={closeMobileMenu} className="hover:text-blue-600 transition">
-              Delete PDF Page
+            <Link href="/tools/remove-pages" onClick={closeMobileMenu} className="hover:text-blue-600 transition">
+              Remove Pages
             </Link>
             <Link href="/tools/word-to-pdf" onClick={closeMobileMenu} className="hover:text-blue-600 transition">
               Word to PDF

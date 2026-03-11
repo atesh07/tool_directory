@@ -53,7 +53,7 @@ const tools: Tool[] = [
   { title: "Edit PDF", description: "Edit text and images in PDF", href: "/tools/edit-pdf", icon: Pencil },
   { title: "Organize PDF", description: "Reorder PDF pages easily", href: "/tools/organize-pdf", icon: Layers },
   { title: "Scan to PDF", description: "Create PDF from scan", href: "/tools/scan-to-pdf", icon: ScanLine },
-  { title: "Delete Pages", description: "Remove pages from PDF", href: "/tools/delete-pages", icon: Trash2 },
+  { title: "Remove Pages", description: "Remove pages from PDF", href: "/tools/remove-pages", icon: Trash2 },
   { title: "Extract Pages", description: "Extract selected pages", href: "/tools/extract-pages", icon: FilePlus },
   { title: "OCR PDF", description: "Make scanned PDF searchable", href: "/tools/ocr-pdf", icon: FileSearch },
   { title: "Validate PDF", description: "Check PDF file integrity", href: "/tools/validate-pdf", icon: FileCheck },
