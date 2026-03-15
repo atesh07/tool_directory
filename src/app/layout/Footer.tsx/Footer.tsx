@@ -24,8 +24,8 @@ const Footer = () => {
           
           {/* Brand & Mission */}
           <div className="lg:pr-6">
-            <Link href="/" className="text-2xl font-black tracking-tight text-blue-600 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-lg">
+            <Link href="/" className="text-2xl font-black tracking-tight text-[#0066cc] flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#0066cc] flex items-center justify-center text-white text-lg">
                 T
               </div>
               ToolsTree
@@ -39,7 +39,7 @@ const Footer = () => {
               {[Linkedin, Twitter, Mail].map((Icon, idx) => (
                 <div 
                   key={idx} 
-                  className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-100 transition-all duration-300 cursor-pointer"
+                  className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-[#0066cc]/10 hover:text-[#0066cc] hover:border-[#0066cc]/20 transition-all duration-300 cursor-pointer"
                 >
                   <Icon size={18} />
                 </div>
@@ -62,7 +62,7 @@ const Footer = () => {
                 <Link 
                   key={idx} 
                   href={link.href} 
-                  className="hover:text-blue-600 hover:translate-x-1 transition-all duration-300 w-fit"
+                  className="hover:text-[#0066cc] hover:translate-x-1 transition-all duration-300 w-fit"
                 >
                   {link.name}
                 </Link>
@@ -87,9 +87,9 @@ const Footer = () => {
                   <Link 
                     key={idx} 
                     href={tool.href} 
-                    className="group flex items-center gap-2 hover:text-blue-600 transition-all duration-300 w-fit"
+                    className="group flex items-center gap-2 hover:text-[#0066cc] transition-all duration-300 w-fit"
                   >
-                    <Icon size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors duration-300" /> 
+                    <Icon size={16} className="text-slate-400 group-hover:text-[#0066cc] transition-colors duration-300" /> 
                     <span className="group-hover:translate-x-1 transition-transform duration-300">{tool.name}</span>
                   </Link>
                 );
@@ -105,7 +105,7 @@ const Footer = () => {
             </p>
             <a 
               href="mailto:support@toolstree.com" 
-              className="inline-flex items-center gap-2 font-medium text-blue-600 hover:text-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 font-medium text-[#0066cc] hover:text-[#005bb5] transition-colors"
             >
               support@toolstree.com
               <ArrowRight size={16} />
@@ -119,8 +119,8 @@ const Footer = () => {
           <p>© {new Date().getFullYear()} ToolsTree. All rights reserved.</p>
 
           <div className="flex gap-6">
-            <Link href="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</Link>
+            <Link href="/privacy" className="hover:text-[#0066cc] transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-[#0066cc] transition-colors">Terms of Service</Link>
           </div>
 
           <p className="flex items-center gap-1.5 font-medium">

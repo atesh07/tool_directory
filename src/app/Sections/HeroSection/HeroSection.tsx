@@ -19,15 +19,15 @@ const HeroSection = () => {
           {/* Sleek Pill Badge */}
           <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-zinc-200/50 text-zinc-600 text-sm font-medium mb-8 shadow-sm">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0066cc]/75 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0066cc]"></span>
             </span>
             Professional PDF Suite
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-zinc-900 leading-[1.05]">
             All PDF Tools in <br className="hidden md:block" />
-            <span className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-transparent bg-clip-text pb-2">
+            <span className="text-[#0066cc] bg-clip-text pb-2">
               One Workspace.
             </span>
           </h1>
@@ -39,7 +39,7 @@ const HeroSection = () => {
 
           {/* Premium CTA Buttons */}
           <div className="mt-10 flex flex-col sm:flex-row gap-4">
-            <button className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-zinc-900 text-white font-medium rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:bg-zinc-800 hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 active:scale-[0.98]">
+            <button className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#0066cc] text-white font-medium rounded-2xl shadow-[0_8px_30px_rgb(0,102,204,0.12)] hover:bg-[#005bb5] hover:shadow-[0_8px_30px_rgb(0,102,204,0.2)] hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#0066cc] focus:ring-offset-2 active:scale-[0.98]">
               Explore Tools
               <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -109,7 +109,7 @@ const HeroSection = () => {
             {/* Elegant Conversion Process Animation */}
             <div className="space-y-5 flex-1 flex flex-col justify-center relative z-10">
                <div className="w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden shadow-inner">
-                 <div className="w-2/3 h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-full animate-[pulse_2s_ease-in-out_infinite] bg-[length:200%_auto]"></div>
+                 <div className="w-2/3 h-full bg-[#0066cc] rounded-full animate-[pulse_2s_ease-in-out_infinite] bg-[length:200%_auto]"></div>
                </div>
                <p className="text-center text-sm font-medium text-zinc-500 tracking-wide">Converting files...</p>
             </div>
