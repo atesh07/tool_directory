@@ -101,7 +101,7 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-slate-900 mb-5 tracking-wide">Contact & Support</h3>
             <p className="text-slate-500 mb-4">
-              Have suggestions or need help with a tool? We're here for you.
+              Have suggestions or need help with a tool? We&apos;re here for you.
             </p>
             <a 
               href="mailto:support@toolstree.com" 

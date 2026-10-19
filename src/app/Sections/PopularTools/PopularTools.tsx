@@ -149,7 +149,7 @@ const PopularTools = () => {
                 </div>
                 <h3 className="text-xl font-medium text-slate-900 mb-2">No tools found</h3>
                 <p className="text-slate-500">
-                  We couldn't find anything matching "{searchQuery}". Try a different keyword.
+                  We couldn&apos;t find anything matching &quot;{searchQuery}&quot;. Try a different keyword.
                 </p>
               </motion.div>
             )}

@@ -18,14 +18,11 @@ export default function ToolClient() {
     const [loading, setLoading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pdfjsRef = useRef<any>(null);
 
     useEffect(() => {
         const loadPdfJs = async () => {
-            // @ts-expect-error missing types
             const pdfjsLib = await import("pdfjs-dist/build/pdf");
-            // @ts-expect-error missing types
             const worker = await import("pdfjs-dist/build/pdf.worker.min.js");
             pdfjsLib.GlobalWorkerOptions.workerSrc = worker.default;
             pdfjsRef.current = pdfjsLib;
