@@ -40,6 +40,12 @@ scripts/seo-check.mjs      the SEO checker behind `npm run seo:check`
 
 To add a tool: add an entry to `src/data/tools.ts`, create `src/app/tools/<slug>/` with the same two files as another tool, and it gets its menu link, sitemap entry, title, description, share card and structured data automatically.
 
+## Content
+
+- Tool pages: all text lives in `src/data/tools.ts` (what it does, limits, troubleshooting, FAQ, links to other tools and guides). Write only what the tool really does, and keep the limits honest.
+- Guides: `src/data/guides.ts`. English guides are under `/guides`, Hindi guides under `/hi`. The Hindi guides are written in Hindi, not translated; add a Hindi guide only if you can write it naturally.
+- Keyword notes and the weekly Search Console routine: `docs/keyword-research.md`.
+
 ## Launch checklist for search engines
 
 1. Deploy and open the public address (Vercel > Project > Domains shows it). It must open without a Vercel login: if it asks you to sign in, turn off Settings > Deployment Protection > Vercel Authentication for production.

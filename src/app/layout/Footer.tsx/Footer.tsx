@@ -97,6 +97,7 @@ const Footer = () => {
           <p>© {new Date().getFullYear()} ToolsTree. All rights reserved.</p>
 
           <div className="flex flex-wrap justify-center gap-x-6">
+            <Link href="/guides" className="flex min-h-[44px] items-center px-1 hover:text-[#0066cc] transition-colors">Guides</Link>
             <Link href="/about" className="flex min-h-[44px] items-center px-1 hover:text-[#0066cc] transition-colors">About</Link>
             <Link href="/contact" className="flex min-h-[44px] items-center px-1 hover:text-[#0066cc] transition-colors">Contact</Link>
             <Link href="/privacy" className="flex min-h-[44px] items-center px-1 hover:text-[#0066cc] transition-colors">Privacy Policy</Link>

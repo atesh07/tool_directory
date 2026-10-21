@@ -119,6 +119,13 @@ const Header = () => {
                 {tool.name}
               </Link>
             ))}
+            <Link
+              href="/guides"
+              aria-current={pathname.startsWith("/guides") ? "page" : undefined}
+              className={`flex min-h-[44px] items-center rounded-lg px-1 font-medium transition text-sm lg:text-base hover:text-[#0066cc] ${pathname.startsWith("/guides") ? "text-[#0066cc]" : ""}`}
+            >
+              Guides
+            </Link>
           </nav>
 
           {/* Desktop Right Section */}
@@ -211,6 +218,9 @@ const Header = () => {
                 {tool.name}
               </Link>
             ))}
+            <Link href="/guides" onClick={closeAll} className="flex min-h-[48px] items-center hover:text-[#0066cc] transition">
+              Guides
+            </Link>
           </div>
         </nav>
       )}

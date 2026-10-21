@@ -11,19 +11,23 @@ type PageMeta = {
   path: string;
   keywords?: string[];
   noindex?: boolean;
+  /** Text printed on the share card. Defaults to the title; use plain Latin text for pages in other scripts */
+  ogTitle?: string;
+  locale?: string;
+  type?: "website" | "article";
 };
 
 /** Metadata shared by every page: canonical URL, Open Graph and Twitter card */
-export function buildMetadata({ title, description, path, keywords, noindex }: PageMeta): Metadata {
-  const image = ogImage(title);
+export function buildMetadata({ title, description, path, keywords, noindex, ogTitle, locale = "en_US", type = "website" }: PageMeta): Metadata {
+  const image = ogImage(ogTitle ?? title);
   return {
     title,
     description,
     keywords,
     alternates: { canonical: path },
     openGraph: {
-      type: "website",
-      locale: "en_US",
+      type,
+      locale,
       siteName: SITE.name,
       title: `${title} | ${SITE.name}`,
       description,
@@ -98,4 +102,17 @@ export const breadcrumbJsonLd = (items: { name: string; path: string }[]) => ({
     name: item.name,
     item: absoluteUrl(item.path),
   })),
+});
+
+export const articleJsonLd = (guide: { title: string; description: string; published: string; updated: string; lang: string }, path: string) => ({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: guide.title,
+  description: guide.description,
+  datePublished: guide.published,
+  dateModified: guide.updated,
+  inLanguage: guide.lang,
+  mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(path) },
+  author: { "@type": "Organization", name: SITE.name, url: SITE.url },
+  publisher: { "@type": "Organization", name: SITE.name, url: SITE.url },
 });

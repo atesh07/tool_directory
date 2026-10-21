@@ -1,18 +1,20 @@
 import Link from "next/link";
-import { Check, ChevronDown, Lock } from "lucide-react";
+import { BookOpen, Check, ChevronDown, Lock } from "lucide-react";
 import JsonLd from "./JsonLd";
 import { TOOLS, getTool, toolPath } from "@/data/tools";
+import { getGuide, guidePath } from "@/data/guides";
 import { breadcrumbJsonLd, faqJsonLd, softwareJsonLd } from "@/lib/seo";
 
 /**
- * Shared page for every tool. The server-rendered copy below the tool (steps, features, FAQ, related tools)
- * is what search engines read, so every tool page gets the same complete SEO structure.
+ * Shared page for every tool. Everything below the tool is plain server-rendered text (what it does, limits,
+ * troubleshooting, FAQ, links), which is what search engines and visitors who scroll read.
  */
 export default function ToolPage({ slug, children }: { slug: string; children: React.ReactNode }) {
   const tool = getTool(slug);
   if (!tool) throw new Error(`Unknown tool: ${slug}`);
   const related = tool.related.map((s) => getTool(s)).filter((t): t is NonNullable<typeof t> => !!t);
   const others = TOOLS.filter((t) => t.slug !== slug && !tool.related.includes(t.slug));
+  const guides = tool.guides.map((g) => getGuide(g)).filter((g): g is NonNullable<typeof g> => !!g);
 
   return (
     <main id="main-content" className="min-h-screen bg-slate-50 flex flex-col pt-12">
@@ -42,7 +44,7 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
         </h1>
         <p className="text-slate-500 text-lg max-w-2xl mx-auto">{tool.intro}</p>
         <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-slate-500">
-          <Lock className="w-4 h-4" /> Free, no sign-up. Your files never leave your browser.
+          <Lock className="w-4 h-4" aria-hidden="true" /> Free, no sign-up. Your files never leave your browser.
         </p>
       </header>
 
@@ -56,7 +58,7 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
         <h2 id="how-to" className="text-2xl md:text-3xl font-bold text-slate-900 text-center mb-10">
           How to use {tool.name}
         </h2>
-        <ol className="grid md:grid-cols-3 gap-8">
+        <ol className={`grid gap-8 ${tool.steps.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
           {tool.steps.map((step, i) => (
             <li key={step.title} className="text-center">
               <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-[#0066cc] text-white flex items-center justify-center font-bold">
@@ -69,23 +71,64 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
         </ol>
       </section>
 
-      {/* Features */}
-      <section className="bg-white border-y border-slate-200 py-12" aria-labelledby="why">
-        <div className="max-w-5xl mx-auto px-4">
-          <h2 id="why" className="text-2xl md:text-3xl font-bold text-slate-900 text-center mb-10">
-            Why use ToolsTree {tool.name}?
+      {/* What it does */}
+      <section className="bg-white border-y border-slate-200 py-12" aria-labelledby="about">
+        <div className="max-w-3xl mx-auto px-4">
+          <h2 id="about" className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
+            About {tool.name}
           </h2>
-          <ul className="grid sm:grid-cols-2 gap-6">
-            {tool.features.map((f) => (
-              <li key={f.title} className="flex gap-3">
-                <Check className="w-5 h-5 text-[#0066cc] mt-0.5 shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-slate-900">{f.title}</h3>
-                  <p className="text-slate-600 text-sm leading-relaxed">{f.text}</p>
-                </div>
+          <div className="space-y-4 text-slate-700 leading-relaxed">
+            {tool.about.map((p) => (
+              <p key={p.slice(0, 40)}>{p}</p>
+            ))}
+          </div>
+          <h3 className="mt-8 mb-3 text-lg font-semibold text-slate-900">When it helps</h3>
+          <ul className="space-y-2">
+            {tool.useCases.map((u) => (
+              <li key={u} className="flex gap-3 text-slate-700">
+                <Check className="w-5 h-5 text-[#0066cc] mt-0.5 shrink-0" aria-hidden="true" />
+                <span>{u}</span>
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      {/* Formats and limits */}
+      <section className="max-w-3xl mx-auto px-4 w-full py-12" aria-labelledby="specs">
+        <h2 id="specs" className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
+          Supported files and limits
+        </h2>
+        <dl className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          {tool.specs.map((row, i) => (
+            <div key={row.label} className={`grid gap-1 px-4 py-3 sm:grid-cols-3 sm:gap-4 ${i % 2 ? "bg-slate-50" : ""}`}>
+              <dt className="text-sm font-semibold text-slate-900">{row.label}</dt>
+              <dd className="text-sm text-slate-700 sm:col-span-2">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <h3 className="mt-8 mb-3 text-lg font-semibold text-slate-900">Good to know</h3>
+        <ul className="list-disc space-y-2 pl-5 text-slate-700">
+          {tool.limits.map((l) => (
+            <li key={l.slice(0, 40)}>{l}</li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Troubleshooting */}
+      <section className="bg-white border-y border-slate-200 py-12" aria-labelledby="trouble">
+        <div className="max-w-3xl mx-auto px-4">
+          <h2 id="trouble" className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">
+            Troubleshooting
+          </h2>
+          <dl className="space-y-5">
+            {tool.troubleshooting.map((t) => (
+              <div key={t.problem}>
+                <dt className="font-semibold text-slate-900">{t.problem}</dt>
+                <dd className="mt-1 text-slate-700 leading-relaxed">{t.fix}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
@@ -96,18 +139,55 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
         </h2>
         <div className="space-y-3">
           {tool.faq.map((item) => (
-            <details key={item.q} className="group bg-white border border-slate-200 rounded-xl p-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900">
+            <details key={item.q} className="group bg-white border border-slate-200 rounded-xl">
+              <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-4 p-5 font-semibold text-slate-900">
                 {item.q}
-                <ChevronDown className="w-5 h-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180" />
+                <ChevronDown className="w-5 h-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
               </summary>
-              <p className="mt-3 text-slate-600 text-sm leading-relaxed">{item.a}</p>
+              <p className="px-5 pb-5 text-slate-600 text-sm leading-relaxed">{item.a}</p>
             </details>
           ))}
         </div>
       </section>
 
-      {/* Related tools: internal links help both visitors and crawlers */}
+      {/* What to do next: links written as sentences, not just a grid */}
+      <section className="max-w-3xl mx-auto px-4 w-full pb-8" aria-labelledby="next">
+        <h2 id="next" className="text-2xl font-bold text-slate-900 mb-4">
+          What to do next
+        </h2>
+        <ul className="space-y-2 text-slate-700">
+          {tool.next.map((n) => {
+            const t = getTool(n.slug);
+            if (!t) return null;
+            return (
+              <li key={n.slug}>
+                {n.text}{" "}
+                <Link href={toolPath(n.slug)} className="font-medium text-[#0066cc] underline">
+                  Open {t.name}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        {guides.length > 0 && (
+          <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-4">
+            <p className="flex items-center gap-2 font-semibold text-slate-900">
+              <BookOpen className="w-5 h-5 text-[#0066cc]" aria-hidden="true" /> Read the guide
+            </p>
+            <ul className="mt-2 space-y-1">
+              {guides.map((g) => (
+                <li key={g.slug}>
+                  <Link href={guidePath(g.slug)} className="font-medium text-[#0066cc] underline">
+                    {g.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      {/* Related tools */}
       <section className="max-w-5xl mx-auto px-4 w-full pb-16" aria-labelledby="more">
         <h2 id="more" className="text-2xl font-bold text-slate-900 text-center mb-8">
           More free PDF tools
@@ -122,7 +202,7 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
                 className="flex items-start gap-3 bg-white border border-slate-200 rounded-xl p-4 hover:border-[#0066cc]/40 hover:shadow-md transition"
               >
                 <span className="w-10 h-10 rounded-lg bg-[#0066cc]/10 text-[#0066cc] flex items-center justify-center shrink-0">
-                  <Icon size={20} />
+                  <Icon size={20} aria-hidden="true" />
                 </span>
                 <span>
                   <span className="block font-semibold text-slate-900">{t.name}</span>

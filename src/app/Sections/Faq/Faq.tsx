@@ -13,12 +13,12 @@ export default function Faq() {
         </h2>
         <div className="space-y-3">
           {HOME_FAQ.map((item) => (
-            <details key={item.q} className="group bg-white border border-slate-200 rounded-xl p-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900">
+            <details key={item.q} className="group bg-white border border-slate-200 rounded-xl">
+              <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-4 p-5 font-semibold text-slate-900">
                 {item.q}
                 <ChevronDown className="w-5 h-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180" />
               </summary>
-              <p className="mt-3 text-slate-600 text-sm leading-relaxed">{item.a}</p>
+              <p className="px-5 pb-5 text-slate-600 text-sm leading-relaxed">{item.a}</p>
             </details>
           ))}
         </div>

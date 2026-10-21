@@ -1,6 +1,6 @@
 import Link from "next/link";
 import JsonLd from "@/components/seo/JsonLd";
-import { COMING_SOON, TOOLS, toolPath } from "@/data/tools";
+import { CATEGORIES, COMING_SOON, TOOLS, toolPath } from "@/data/tools";
 import { absoluteUrl, breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
@@ -32,24 +32,40 @@ export default function ToolsIndexPage() {
           </p>
         </header>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {TOOLS.map((tool) => {
-            const Icon = tool.icon;
-            return (
-              <Link
-                key={tool.slug}
-                href={toolPath(tool.slug)}
-                className="block bg-white border border-slate-200 rounded-2xl p-6 hover:border-[#0066cc]/40 hover:shadow-lg transition"
-              >
-                <span className="w-12 h-12 rounded-xl bg-[#0066cc]/10 text-[#0066cc] flex items-center justify-center mb-4">
-                  <Icon size={24} />
-                </span>
-                <h2 className="font-semibold text-lg text-slate-900 mb-1">{tool.name}</h2>
-                <p className="text-sm text-slate-600 leading-relaxed">{tool.intro}</p>
-              </Link>
-            );
-          })}
+        <div className="space-y-14">
+          {CATEGORIES.map((cat) => (
+            <section key={cat.id} aria-labelledby={`cat-${cat.id}`}>
+              <h2 id={`cat-${cat.id}`} className="text-2xl font-bold text-slate-900">{cat.name}</h2>
+              <p className="mt-1 mb-6 text-slate-600">{cat.description}</p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {TOOLS.filter((t) => t.category === cat.id).map((tool) => {
+                  const Icon = tool.icon;
+                  return (
+                    <Link
+                      key={tool.slug}
+                      href={toolPath(tool.slug)}
+                      className="block bg-white border border-slate-200 rounded-2xl p-6 hover:border-[#0066cc]/40 hover:shadow-lg transition"
+                    >
+                      <span className="w-12 h-12 rounded-xl bg-[#0066cc]/10 text-[#0066cc] flex items-center justify-center mb-4">
+                        <Icon size={24} aria-hidden="true" />
+                      </span>
+                      <h3 className="font-semibold text-lg text-slate-900 mb-1">{tool.name}</h3>
+                      <p className="text-sm text-slate-600 leading-relaxed">{tool.intro}</p>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
+
+        <p className="mt-14 text-center text-slate-600">
+          Not sure which tool you need?{" "}
+          <Link href="/guides" className="font-semibold text-[#0066cc] underline">
+            Read the step-by-step guides
+          </Link>
+          .
+        </p>
 
         <section className="mt-16 text-center" aria-labelledby="soon">
           <h2 id="soon" className="text-xl font-semibold text-slate-900 mb-4">Coming soon</h2>
