@@ -1,6 +1,7 @@
 "use client";
 
 import ErrorNotice from "@/components/tools/ErrorNotice";
+import UploadZone from "@/components/tools/UploadZone";
 import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
 import { downloadBlob } from "@/lib/download";
 
@@ -55,8 +56,8 @@ export default function ToolClient() {
     const [chunkSize, setChunkSize] = useState(2);
     const [loading, setLoading] = useState(false);
     const [notice, setNotice] = useState<string | null>(null);
+    const [done, setDone] = useState<string | null>(null);
     const [progress, setProgress] = useState("");
-    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pdfjsRef = useRef<any>(null);
 
@@ -99,6 +100,7 @@ export default function ToolClient() {
 
     const handleFile = async (selectedFile: File) => {
         setNotice(null);
+        setDone(null);
         // The PDF reader loads in the background; wait for it instead of ignoring the file
         let waited = 0;
         while (!pdfjsRef.current && waited < 100) {
@@ -181,11 +183,13 @@ export default function ToolClient() {
 
             if (outputs.length === 1) {
                 downloadBlob(new Blob([outputs[0].bytes as unknown as BlobPart], { type: "application/pdf" }), outputs[0].name);
+                setDone(`${outputs[0].name} was downloaded. Check your Downloads folder.`);
             } else {
                 const zip = new JSZip();
                 outputs.forEach(o => zip.file(o.name, o.bytes));
                 const zipBlob = await zip.generateAsync({ type: "blob" });
                 downloadBlob(zipBlob, `${baseName}_split.zip`);
+                setDone(`${baseName}_split.zip was downloaded with ${outputs.length} PDF files. Check your Downloads folder.`);
             }
         } catch (err) {
             setNotice(`Could not split this PDF. ${pdfErrorMessage(err)}`);
@@ -195,29 +199,21 @@ export default function ToolClient() {
     };
 
     const startNew = () => {
+        setDone(null);
+        setNotice(null);
         setFile(null);
         setImages([]);
         setRangeInput("");
     };
 
-    // Drag and drop events
-    const onDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
 
-    const onDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleFile(e.dataTransfer.files[0]);
-        }
-    };
 
     const modeButton = (value: SplitMode, label: string) => (
         <button
             onClick={() => setMode(value)}
-            className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition border
+            aria-pressed={mode === value}
+            disabled={loading}
+            className={`flex-1 min-h-[44px] px-4 py-2 rounded-lg text-sm font-medium transition border disabled:opacity-50
                 ${mode === value
                     ? "bg-[#0062cc] border-[#0062cc] text-white shadow-sm"
                     : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}
@@ -234,55 +230,26 @@ export default function ToolClient() {
     return (
         <div className="space-y-8">
             <ErrorNotice message={notice} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setNotice(null)} />
+            <ErrorNotice message={done} tone="success" onRetry={startNew} retryLabel="Split another PDF" onDismiss={() => setDone(null)} />
             {!file ? (
                 <div className="max-w-3xl mx-auto">
-                    <div
-                        onDragOver={onDragOver}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDrop={onDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`
-              border-[2px] border-dashed p-10 md:p-14 text-center cursor-pointer
-              transition-all duration-300 group
-              ${isDragging || loading
-                                ? "border-[#0062cc] bg-blue-50/50"
-                                : "border-slate-300 hover:border-[#0062cc] bg-white"}
-            `}
-                    >
-                        <input
-                            type="file"
-                            accept="application/pdf"
-                            ref={fileInputRef}
-                            onChange={(e) => e.target.files && handleFile(e.target.files[0])}
-                            className="hidden"
-                        />
-
-                        <div className="flex flex-col items-center justify-center space-y-4">
-                            {loading ? (
-                                <>
-                                    <RefreshCcw className="w-10 h-10 animate-spin text-[#0062cc]" />
-                                    <p className="text-xl font-medium text-slate-800">{progress || "Processing PDF..."}</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-slate-500 font-medium">Drop PDF file here or</p>
-                                    <button className="bg-[#0062cc] hover:bg-[#0052ad] text-white text-lg font-bold py-3 px-12 rounded-lg transition-colors shadow-sm">
-                                        Select PDF
-                                    </button>
-                                    <div className="mt-4 flex items-center justify-center text-sm text-slate-500 gap-1.5 pt-2">
-                                        <Lock className="w-4 h-4" /> Your files are secure
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                    <UploadZone
+                        inputRef={fileInputRef}
+                        accept="application/pdf"
+                        noun="PDF"
+                        buttonLabel="Select PDF"
+                        hint="PDF files only, up to 150 MB. Password-protected PDFs cannot be opened."
+                        onFiles={(files) => handleFile(files[0])}
+                        loading={loading}
+                        loadingText={progress || "Processing PDF..."}
+                    />
                 </div>
             ) : (
                 <div className="space-y-6">
                     {/* Action Header */}
                     <div className="flex flex-col md:flex-row justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 gap-4">
-                        <div className="flex items-center gap-3">
-                            <span className="font-semibold text-slate-700">{file.name}</span>
+                        <div className="flex min-w-0 items-center gap-3">
+                            <span className="truncate font-semibold text-slate-700">{file.name}</span>
                             <span className="text-sm text-slate-500 bg-white px-2 py-1 rounded border border-slate-200">
                                 {numPages} pages
                             </span>
@@ -290,7 +257,8 @@ export default function ToolClient() {
 
                         <button
                             onClick={startNew}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition shadow-sm font-medium text-sm"
+                            disabled={loading}
+                            className="flex min-h-[44px] items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition shadow-sm font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Trash2 className="w-4 h-4" /> Discard File
                         </button>
@@ -306,37 +274,42 @@ export default function ToolClient() {
 
                         {mode === "ranges" && (
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-slate-700">
+                                <label htmlFor="split-ranges" className="block text-sm font-medium text-slate-700">
                                     Page ranges (each range becomes a separate PDF)
                                 </label>
                                 <input
+                                    id="split-ranges"
                                     type="text"
+                                    inputMode="text"
+                                    aria-invalid={!!error}
                                     value={rangeInput}
                                     onChange={(e) => setRangeInput(e.target.value)}
                                     placeholder="e.g. 1-3, 5, 8-10"
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0062cc] focus:border-transparent"
+                                    className="w-full min-h-[44px] px-4 py-2 border border-slate-300 rounded-lg"
                                 />
                             </div>
                         )}
 
                         {mode === "fixed" && (
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-slate-700">
+                                <label htmlFor="split-chunk" className="block text-sm font-medium text-slate-700">
                                     Pages per file
                                 </label>
                                 <input
+                                    id="split-chunk"
                                     type="number"
+                                    inputMode="numeric"
                                     min={1}
                                     max={numPages}
                                     value={chunkSize}
                                     onChange={(e) => setChunkSize(parseInt(e.target.value, 10))}
-                                    className="w-32 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0062cc] focus:border-transparent"
+                                    className="w-32 min-h-[44px] px-4 py-2 border border-slate-300 rounded-lg"
                                 />
                             </div>
                         )}
 
                         {error ? (
-                            <p className="text-red-500 text-sm font-medium">{error}</p>
+                            <p role="alert" className="text-red-600 text-sm font-medium">{error}</p>
                         ) : (
                             <p className="text-sm text-slate-500">
                                 This will create <span className="font-semibold text-slate-700">{groups.length}</span>{" "}
@@ -359,7 +332,7 @@ export default function ToolClient() {
                                     <div className="w-full aspect-auto flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden mb-3 relative shadow-sm border border-slate-100">
                                         <img
                                             src={img}
-                                            alt={`Page ${index + 1}`}
+                                            alt=""
                                             className="max-w-full max-h-48 object-contain"
                                         />
 
@@ -389,13 +362,17 @@ export default function ToolClient() {
                         <button
                             onClick={processAndDownload}
                             disabled={loading || !!error || groups.length === 0}
-                            className={`w-full max-w-md py-4 rounded-xl font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3
+                            aria-busy={loading}
+                            className={`w-full max-w-md min-h-[56px] py-4 rounded-xl font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3
                 ${loading || error || groups.length === 0
                                     ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
                                     : "bg-[#0062cc] text-white hover:bg-[#0052ad] hover:shadow-blue-500/30"}`}
                         >
                             {loading ? (
-                                <RefreshCcw className="w-6 h-6 animate-spin" />
+                                <>
+                                    <RefreshCcw className="w-6 h-6 animate-spin" aria-hidden="true" />
+                                    Preparing your files...
+                                </>
                             ) : groups.length > 1 ? (
                                 <>
                                     <Download className="w-6 h-6" />

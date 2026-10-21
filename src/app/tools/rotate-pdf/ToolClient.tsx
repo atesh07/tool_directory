@@ -1,6 +1,7 @@
 "use client";
 
 import ErrorNotice from "@/components/tools/ErrorNotice";
+import UploadZone from "@/components/tools/UploadZone";
 import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
 import { downloadBlob } from "@/lib/download";
 
@@ -22,8 +23,8 @@ export default function ToolClient() {
     const [rotations, setRotations] = useState<number[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [done, setDone] = useState<string | null>(null);
     const [progress, setProgress] = useState("");
-    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pdfjsRef = useRef<any>(null);
 
@@ -39,6 +40,7 @@ export default function ToolClient() {
 
     const handleFile = async (selectedFile: File) => {
         setError(null);
+        setDone(null);
         // The PDF reader loads in the background; wait for it instead of ignoring the file
         let waited = 0;
         while (!pdfjsRef.current && waited < 100) {
@@ -143,6 +145,7 @@ export default function ToolClient() {
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
             downloadBlob(blob, `rotated_${file.name}`);
+            setDone(`rotated_${file.name} was downloaded. Check your Downloads folder.`);
         } catch (err) {
             setError(`Could not rotate this PDF. ${pdfErrorMessage(err)}`);
         } finally {
@@ -151,24 +154,14 @@ export default function ToolClient() {
     };
 
     const startNew = () => {
+        setDone(null);
+        setError(null);
         setFile(null);
         setImages([]);
         setRotations([]);
     };
 
-    // Drag and drop events
-    const onDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
 
-    const onDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleFile(e.dataTransfer.files[0]);
-        }
-    };
 
     const retryPick = () => {
         setError(null);
@@ -178,73 +171,48 @@ export default function ToolClient() {
     return (
         <div className="space-y-8">
             <ErrorNotice message={error} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setError(null)} />
+            <ErrorNotice message={done} tone="success" onRetry={startNew} retryLabel="Rotate another PDF" onDismiss={() => setDone(null)} />
             {!file ? (
                 <div className="max-w-3xl mx-auto">
-                    <div
-                        onDragOver={onDragOver}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDrop={onDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`
-              border-[2px] border-dashed p-10 md:p-14 text-center cursor-pointer 
-              transition-all duration-300 group
-              ${isDragging || loading
-                                ? "border-[#0062cc] bg-blue-50/50"
-                                : "border-slate-300 hover:border-[#0062cc] bg-white"}
-            `}
-                    >
-                        <input
-                            type="file"
-                            accept="application/pdf"
-                            ref={fileInputRef}
-                            onChange={(e) => e.target.files && handleFile(e.target.files[0])}
-                            className="hidden"
-                        />
-
-                        <div className="flex flex-col items-center justify-center space-y-4">
-                            {loading ? (
-                                <>
-                                    <RefreshCcw className="w-10 h-10 animate-spin text-[#0062cc]" />
-                                    <p className="text-xl font-medium text-slate-800">{progress || "Processing PDF..."}</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-slate-500 font-medium">Drop PDF file here or</p>
-                                    <button className="bg-[#0062cc] hover:bg-[#0052ad] text-white text-lg font-bold py-3 px-12 rounded-lg transition-colors shadow-sm">
-                                        Select PDF
-                                    </button>
-                                    <div className="mt-4 flex items-center justify-center text-sm text-slate-500 gap-1.5 pt-2">
-                                        <Lock className="w-4 h-4" /> Your files are secure
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                    <UploadZone
+                        inputRef={fileInputRef}
+                        accept="application/pdf"
+                        noun="PDF"
+                        buttonLabel="Select PDF"
+                        hint="PDF files only, up to 150 MB. Password-protected PDFs cannot be opened."
+                        onFiles={(files) => handleFile(files[0])}
+                        loading={loading}
+                        loadingText={progress || "Processing PDF..."}
+                    />
                 </div>
             ) : (
                 <div className="space-y-6">
                     {/* Action Header */}
                     <div className="flex flex-col md:flex-row justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 gap-4">
-                        <div className="flex items-center gap-3">
-                            <span className="font-semibold text-slate-700">{file.name}</span>
+                        <div className="flex min-w-0 items-center gap-3">
+                            <span className="truncate font-semibold text-slate-700">{file.name}</span>
+                            <span className="shrink-0 rounded border border-slate-200 bg-white px-2 py-1 text-sm text-slate-500">{images.length} page{images.length === 1 ? "" : "s"}</span>
                         </div>
 
-                        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+                        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
                             <button
                                 onClick={rotateAllLeft}
-                                className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition shadow-sm font-medium text-sm"
+                                disabled={loading}
+                                className="flex min-h-[44px] items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition shadow-sm font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <RotateCcw className="w-4 h-4" /> All Left
                             </button>
                             <button
                                 onClick={rotateAllRight}
-                                className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition shadow-sm font-medium text-sm"
+                                disabled={loading}
+                                className="flex min-h-[44px] items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition shadow-sm font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <RotateCw className="w-4 h-4" /> All Right
                             </button>
                             <button
                                 onClick={startNew}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition shadow-sm font-medium text-sm ml-auto md:ml-2"
+                                disabled={loading}
+                                className="flex min-h-[44px] items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition shadow-sm font-medium text-sm ml-auto md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Trash2 className="w-4 h-4" /> Discard
                             </button>
@@ -260,7 +228,7 @@ export default function ToolClient() {
                                 <div className="w-full aspect-square flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden mb-4 relative shadow-sm border border-slate-100">
                                     <img
                                         src={img}
-                                        alt={`Page ${index + 1}`}
+                                        alt={`Page ${index + 1} preview`}
                                         className="max-w-full max-h-full transition-transform duration-300 ease-in-out"
                                         style={{ transform: `rotate(${rotations[index]}deg)` }}
                                     />
@@ -275,17 +243,21 @@ export default function ToolClient() {
                                 <div className="flex items-center justify-center gap-4 w-full">
                                     <button
                                         onClick={() => rotatePageLeft(index)}
-                                        className="p-2.5 rounded-full bg-slate-100 hover:bg-[#0062cc] text-slate-600 hover:text-white transition-colors"
-                                        title="Rotate Left"
+                                        disabled={loading}
+                                        aria-label={`Rotate page ${index + 1} left`}
+                                        className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 hover:bg-[#0062cc] text-slate-600 hover:text-white transition-colors disabled:opacity-50"
+                                        title="Rotate left"
                                     >
-                                        <RotateCcw className="w-4 h-4" />
+                                        <RotateCcw className="w-5 h-5" aria-hidden="true" />
                                     </button>
                                     <button
                                         onClick={() => rotatePageRight(index)}
-                                        className="p-2.5 rounded-full bg-slate-100 hover:bg-[#0062cc] text-slate-600 hover:text-white transition-colors"
-                                        title="Rotate Right"
+                                        disabled={loading}
+                                        aria-label={`Rotate page ${index + 1} right`}
+                                        className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 hover:bg-[#0062cc] text-slate-600 hover:text-white transition-colors disabled:opacity-50"
+                                        title="Rotate right"
                                     >
-                                        <RotateCw className="w-4 h-4" />
+                                        <RotateCw className="w-5 h-5" aria-hidden="true" />
                                     </button>
                                 </div>
                             </div>
@@ -297,13 +269,17 @@ export default function ToolClient() {
                         <button
                             onClick={processAndDownload}
                             disabled={loading}
-                            className={`w-full max-w-md py-4 rounded-xl font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3
+                            aria-busy={loading}
+                            className={`w-full max-w-md min-h-[56px] py-4 rounded-xl font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3
                 ${loading
                                     ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
                                     : "bg-[#0062cc] text-white hover:bg-[#0052ad] hover:shadow-blue-500/30"}`}
                         >
                             {loading ? (
-                                <RefreshCcw className="w-6 h-6 animate-spin" />
+                                <>
+                                    <RefreshCcw className="w-6 h-6 animate-spin" aria-hidden="true" />
+                                    Preparing your PDF...
+                                </>
                             ) : (
                                 <>
                                     <Download className="w-6 h-6" />

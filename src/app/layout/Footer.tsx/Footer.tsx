@@ -12,7 +12,7 @@ const Footer = () => {
           
           {/* Brand & Mission */}
           <div className="lg:pr-6">
-            <Link href="/" className="text-2xl font-black tracking-tight text-[#0066cc] flex items-center gap-2">
+            <Link href="/" className="text-2xl font-black tracking-tight text-[#0066cc] flex min-h-[44px] items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-[#0066cc] flex items-center justify-center text-white text-lg">
                 T
               </div>
@@ -45,7 +45,7 @@ const Footer = () => {
                 <Link 
                   key={idx} 
                   href={link.href} 
-                  className="hover:text-[#0066cc] hover:translate-x-1 transition-all duration-300 w-fit"
+                  className="flex min-h-[44px] items-center hover:text-[#0066cc] hover:translate-x-1 transition-all duration-300 w-fit"
                 >
                   {link.name}
                 </Link>
@@ -65,7 +65,7 @@ const Footer = () => {
                   <Link 
                     key={idx} 
                     href={tool.href} 
-                    className="group flex items-center gap-2 hover:text-[#0066cc] transition-all duration-300 w-fit"
+                    className="group flex min-h-[44px] items-center gap-2 hover:text-[#0066cc] transition-all duration-300 w-fit"
                   >
                     <Icon size={16} className="text-slate-400 group-hover:text-[#0066cc] transition-colors duration-300" /> 
                     <span className="group-hover:translate-x-1 transition-transform duration-300">{tool.name}</span>
@@ -83,7 +83,7 @@ const Footer = () => {
             </p>
             <a 
               href={`mailto:${SITE.email}`} 
-              className="inline-flex items-center gap-2 font-medium text-[#0066cc] hover:text-[#005bb5] transition-colors"
+              className="inline-flex min-h-[44px] items-center gap-2 font-medium text-[#0066cc] hover:text-[#005bb5] transition-colors"
             >
               {SITE.email}
               <ArrowRight size={16} />
@@ -96,11 +96,11 @@ const Footer = () => {
         <div className="border-t border-slate-100 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
           <p>© {new Date().getFullYear()} ToolsTree. All rights reserved.</p>
 
-          <div className="flex gap-6">
-            <Link href="/about" className="hover:text-[#0066cc] transition-colors">About</Link>
-            <Link href="/contact" className="hover:text-[#0066cc] transition-colors">Contact</Link>
-            <Link href="/privacy" className="hover:text-[#0066cc] transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-[#0066cc] transition-colors">Terms of Service</Link>
+          <div className="flex flex-wrap justify-center gap-x-6">
+            <Link href="/about" className="flex min-h-[44px] items-center px-1 hover:text-[#0066cc] transition-colors">About</Link>
+            <Link href="/contact" className="flex min-h-[44px] items-center px-1 hover:text-[#0066cc] transition-colors">Contact</Link>
+            <Link href="/privacy" className="flex min-h-[44px] items-center px-1 hover:text-[#0066cc] transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="flex min-h-[44px] items-center px-1 hover:text-[#0066cc] transition-colors">Terms of Service</Link>
           </div>
 
           <p className="flex items-center gap-1.5 font-medium">

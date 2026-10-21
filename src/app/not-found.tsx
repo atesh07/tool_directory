@@ -3,7 +3,7 @@ import { TOOLS, toolPath } from "@/data/tools";
 
 export default function NotFound() {
   return (
-    <main className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4 py-24">
+    <main id="main-content" className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4 py-24">
       <p className="text-sm font-semibold text-[#0066cc]">404</p>
       <h1 className="mt-2 text-4xl font-bold text-slate-900">Page not found</h1>
       <p className="mt-3 text-slate-500 max-w-md">The page you are looking for does not exist. Try one of our free PDF tools instead.</p>

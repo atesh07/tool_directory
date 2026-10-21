@@ -1,6 +1,8 @@
 // Shared checks and friendly error text for the PDF tools
 
 export const MAX_PDF_MB = 150;
+export const MAX_IMAGE_MB = 30;
+export const MAX_DOCX_MB = 25;
 
 /** Looks at the file itself (size, name and the first bytes) before any heavy work starts. Returns a message, or null if it looks fine. */
 export async function checkPdfFile(file: File): Promise<string | null> {
@@ -32,6 +34,7 @@ export function pdfErrorMessage(err: unknown): string {
 /** Same idea for images: checks the name, the size and the first bytes of the file. */
 export async function checkImageFile(file: File): Promise<string | null> {
   if (file.size === 0) return `"${file.name}" is empty (0 bytes).`;
+  if (file.size > MAX_IMAGE_MB * 1024 * 1024) return `"${file.name}" is larger than ${MAX_IMAGE_MB} MB.`;
   if (!/^image\/(png|jpe?g)$/i.test(file.type) && !/\.(png|jpe?g)$/i.test(file.name)) {
     return `"${file.name}" is not a JPG or PNG image.`;
   }

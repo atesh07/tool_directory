@@ -1,6 +1,7 @@
 "use client";
 
 import ErrorNotice from "@/components/tools/ErrorNotice";
+import UploadZone from "@/components/tools/UploadZone";
 import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
 import { downloadBlob } from "@/lib/download";
 
@@ -20,8 +21,8 @@ export default function ToolClient() {
     const [deletedPages, setDeletedPages] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [done, setDone] = useState<string | null>(null);
     const [progress, setProgress] = useState("");
-    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pdfjsRef = useRef<any>(null);
 
@@ -37,6 +38,7 @@ export default function ToolClient() {
 
     const handleFile = async (selectedFile: File) => {
         setError(null);
+        setDone(null);
         // The PDF reader loads in the background; wait for it instead of ignoring the file
         let waited = 0;
         while (!pdfjsRef.current && waited < 100) {
@@ -131,6 +133,7 @@ export default function ToolClient() {
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
             downloadBlob(blob, `removed_pages_${file.name}`);
+            setDone(`removed_pages_${file.name} was downloaded. Check your Downloads folder.`);
         } catch (err) {
             setError(`Could not remove the pages. ${pdfErrorMessage(err)}`);
         } finally {
@@ -139,24 +142,14 @@ export default function ToolClient() {
     };
 
     const startNew = () => {
+        setDone(null);
+        setError(null);
         setFile(null);
         setImages([]);
         setDeletedPages(new Set());
     };
 
-    // Drag and drop events
-    const onDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
 
-    const onDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleFile(e.dataTransfer.files[0]);
-        }
-    };
 
     const retryPick = () => {
         setError(null);
@@ -166,65 +159,36 @@ export default function ToolClient() {
     return (
         <div className="space-y-8">
             <ErrorNotice message={error} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setError(null)} />
+            <ErrorNotice message={done} tone="success" onRetry={startNew} retryLabel="Edit another PDF" onDismiss={() => setDone(null)} />
             {!file ? (
                 <div className="max-w-3xl mx-auto">
-                    <div
-                        onDragOver={onDragOver}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDrop={onDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`
-              border-[2px] border-dashed p-10 md:p-14 text-center cursor-pointer 
-              transition-all duration-300 group
-              ${isDragging || loading
-                                ? "border-[#0062cc] bg-blue-50/50"
-                                : "border-slate-300 hover:border-[#0062cc] bg-white"}
-            `}
-                    >
-                        <input
-                            type="file"
-                            accept="application/pdf"
-                            ref={fileInputRef}
-                            onChange={(e) => e.target.files && handleFile(e.target.files[0])}
-                            className="hidden"
-                        />
-
-                        <div className="flex flex-col items-center justify-center space-y-4">
-                            {loading ? (
-                                <>
-                                    <RefreshCcw className="w-10 h-10 animate-spin text-[#0062cc]" />
-                                    <p className="text-xl font-medium text-slate-800">{progress || "Processing PDF..."}</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-slate-500 font-medium">Drop PDF file here or</p>
-                                    <button className="bg-[#0062cc] hover:bg-[#0052ad] text-white text-lg font-bold py-3 px-12 rounded-lg transition-colors shadow-sm">
-                                        Select PDF
-                                    </button>
-                                    <div className="mt-4 flex items-center justify-center text-sm text-slate-500 gap-1.5 pt-2">
-                                        <Lock className="w-4 h-4" /> Your files are secure
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                    <UploadZone
+                        inputRef={fileInputRef}
+                        accept="application/pdf"
+                        noun="PDF"
+                        buttonLabel="Select PDF"
+                        hint="PDF files only, up to 150 MB. Password-protected PDFs cannot be opened."
+                        onFiles={(files) => handleFile(files[0])}
+                        loading={loading}
+                        loadingText={progress || "Processing PDF..."}
+                    />
                 </div>
             ) : (
                 <div className="space-y-6">
                     {/* Action Header */}
                     <div className="flex flex-col md:flex-row justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 gap-4">
-                        <div className="flex items-center gap-3">
-                            <span className="font-semibold text-slate-700">{file.name}</span>
+                        <div className="flex min-w-0 items-center gap-3">
+                            <span className="truncate font-semibold text-slate-700">{file.name}</span>
                             <span className="text-sm text-slate-500 bg-white px-2 py-1 rounded border border-slate-200">
                                 {images.length} pages
                             </span>
                         </div>
 
-                        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+                        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
                             <button
                                 onClick={() => setDeletedPages(new Set())}
-                                disabled={deletedPages.size === 0}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition shadow-sm font-medium text-sm
+                                disabled={deletedPages.size === 0 || loading}
+                                className={`flex min-h-[44px] items-center gap-2 px-4 py-2 rounded-lg border transition shadow-sm font-medium text-sm
                                     ${deletedPages.size === 0 
                                         ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed" 
                                         : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}
@@ -233,7 +197,8 @@ export default function ToolClient() {
                             </button>
                             <button
                                 onClick={startNew}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition shadow-sm font-medium text-sm ml-auto md:ml-2"
+                                disabled={loading}
+                                className="flex min-h-[44px] items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition shadow-sm font-medium text-sm ml-auto md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Trash2 className="w-4 h-4" /> Discard File
                             </button>
@@ -243,7 +208,7 @@ export default function ToolClient() {
                     {/* Information Banner */}
                     <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
                         <Trash2 className="w-4 h-4" />
-                        Click on the pages you want to remove. Selected pages will be excluded from the downloaded PDF.
+                        Tap or click the pages you want to remove. Selected pages will be excluded from the downloaded PDF.
                     </div>
 
                     {/* Grid of pages */}
@@ -253,7 +218,17 @@ export default function ToolClient() {
                             return (
                                 <div 
                                     key={index} 
-                                    onClick={() => togglePageDeletion(index)}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-pressed={isDeleted}
+                                    aria-label={`Page ${index + 1}, ${isDeleted ? "marked for removal. Press to keep it" : "kept. Press to remove it"}`}
+                                    onClick={() => !loading && togglePageDeletion(index)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            if (!loading) togglePageDeletion(index);
+                                        }
+                                    }}
                                     className={`group flex flex-col items-center bg-white border-2 rounded-2xl p-4 cursor-pointer transition-all duration-300
                                         ${isDeleted 
                                             ? "border-red-500 bg-red-50/30 scale-95 opacity-75" 
@@ -263,7 +238,7 @@ export default function ToolClient() {
                                     <div className="w-full aspect-auto flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden mb-3 relative shadow-sm border border-slate-100">
                                         <img
                                             src={img}
-                                            alt={`Page ${index + 1}`}
+                                            alt=""
                                             className={`max-w-full max-h-48 object-contain transition-all duration-300 ease-in-out
                                                 ${isDeleted ? "grayscale sepia-[.3] hue-rotate-[-50deg] saturate-200" : ""}`}
                                         />
@@ -302,13 +277,17 @@ export default function ToolClient() {
                         <button
                             onClick={processAndDownload}
                             disabled={loading || deletedPages.size === images.length}
-                            className={`w-full max-w-md py-4 rounded-xl font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3
+                            aria-busy={loading}
+                            className={`w-full max-w-md min-h-[56px] py-4 rounded-xl font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3
                 ${loading || deletedPages.size === images.length
                                     ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
                                     : "bg-[#0062cc] text-white hover:bg-[#0052ad] hover:shadow-blue-500/30"}`}
                         >
                             {loading ? (
-                                <RefreshCcw className="w-6 h-6 animate-spin" />
+                                <>
+                                    <RefreshCcw className="w-6 h-6 animate-spin" aria-hidden="true" />
+                                    Preparing your PDF...
+                                </>
                             ) : (
                                 <>
                                     <Download className="w-6 h-6" />
@@ -316,9 +295,6 @@ export default function ToolClient() {
                                 </>
                             )}
                         </button>
-                        {deletedPages.size === images.length && images.length > 0 && (
-                            <p className="text-red-500 text-sm font-medium">You cannot remove every page from the document.</p>
-                        )}
                     </div>
                 </div>
             )}

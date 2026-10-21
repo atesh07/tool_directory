@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <main>
+    <main id="main-content">
       <HeroSection />
       <PopularTools />
       <Tutorial />

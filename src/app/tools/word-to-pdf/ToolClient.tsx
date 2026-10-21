@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { FileText, Info, CheckCircle2 } from "lucide-react";
+import { Info } from "lucide-react";
 import ErrorNotice from "@/components/tools/ErrorNotice";
+import UploadZone from "@/components/tools/UploadZone";
 import { downloadBlob } from "@/lib/download";
+import { MAX_DOCX_MB } from "@/lib/pdfFiles";
 
 // A4 at 96 dpi
 const PAGE_W = 794;
@@ -15,6 +17,7 @@ const MAX_CANVAS_PX = 30000; // browsers refuse canvases much taller than this
 /** Checks the file itself before any work starts. */
 async function checkDocx(file: File): Promise<string | null> {
   if (file.size === 0) return "This file is empty (0 bytes). Please choose a different document.";
+  if (file.size > MAX_DOCX_MB * 1024 * 1024) return `This file is larger than ${MAX_DOCX_MB} MB. Large documents can crash the browser tab.`;
   if (/\.doc$/i.test(file.name)) return "Old .doc files are not supported. Open it in Word and save it as .docx first.";
   if (!/\.docx$/i.test(file.name)) return "Please choose a Word document (.docx).";
   const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
@@ -29,10 +32,7 @@ export default function ToolClient() {
   const [done, setDone] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const convertToPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // Reset so choosing the same file again still triggers a new conversion
-    e.target.value = "";
+  const convertToPdf = async (file: File | undefined) => {
     if (!file) return;
 
     setError(null);
@@ -192,7 +192,7 @@ export default function ToolClient() {
       setStatus("Saving...");
       const name = `${file.name.replace(/\.docx$/i, "")}.pdf`;
       downloadBlob(pdf.output("blob"), name);
-      setDone(`${name} was created with ${pages} page${pages === 1 ? "" : "s"}.`);
+      setDone(`${name} was downloaded with ${pages} page${pages === 1 ? "" : "s"}. Check your Downloads folder.`);
     } catch (err) {
       console.error("Conversion error:", err);
       setError(
@@ -211,26 +211,21 @@ export default function ToolClient() {
     <div className="space-y-4">
       <ErrorNotice message={error} onRetry={() => inputRef.current?.click()} retryLabel="Choose another file" onDismiss={() => setError(null)} />
 
-      {done && (
-        <div role="status" className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-          <p className="font-medium">{done}</p>
-        </div>
-      )}
+      <ErrorNotice message={done} tone="success" onRetry={() => inputRef.current?.click()} retryLabel="Convert another document" onDismiss={() => setDone(null)} />
 
-      <div className="p-10 border-4 border-dashed border-blue-100 rounded-2xl bg-white shadow-sm hover:border-blue-300 transition-colors">
-        <div className="flex flex-col items-center">
-          <FileText className="w-10 h-10 text-[#0066cc] mb-4" />
-          <label className={`cursor-pointer bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all ${loading ? "opacity-70 cursor-wait" : ""}`}>
-            {loading ? status || "Processing..." : "Select Word Document"}
-            <input ref={inputRef} type="file" accept=".docx" className="hidden" onChange={convertToPdf} disabled={loading} />
-          </label>
-          <p className="mt-4 text-gray-500 text-sm">Upload a .docx file to convert it to PDF</p>
-        </div>
-      </div>
+      <UploadZone
+        inputRef={inputRef}
+        accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        noun="Word document"
+        buttonLabel="Select Word Document"
+        hint="Word .docx files only, up to 25 MB. Old .doc files are not supported."
+        onFiles={(files) => convertToPdf(files[0])}
+        loading={loading}
+        loadingText={status || "Processing..."}
+      />
 
       <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-        <Info className="w-4 h-4 shrink-0 mt-0.5" />
+        <Info className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
         <p>
           Beta: the PDF is made from pictures of your document pages, so its text cannot be selected or searched. Very
           complex layouts may look different from Word.

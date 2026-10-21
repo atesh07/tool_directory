@@ -13,3 +13,9 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up { animation: none; }
 }
+
+/* Keyboard users must always see where they are */
+:focus-visible {
+  outline: 3px solid #0062cc !important;
+  outline-offset: 2px !important;
+}

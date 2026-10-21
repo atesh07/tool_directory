@@ -11,7 +11,7 @@ export const metadata = buildMetadata({
 
 export default function ToolsIndexPage() {
   return (
-    <main className="min-h-screen bg-slate-50 pt-12 pb-20 px-4">
+    <main id="main-content" className="min-h-screen bg-slate-50 pt-12 pb-20 px-4">
       <JsonLd
         data={[
           breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Tools", path: "/tools" }]),

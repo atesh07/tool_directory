@@ -32,11 +32,11 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
       {/* Hero */}
       <header className="text-center pt-8 pb-10 px-4">
         <nav aria-label="Breadcrumb" className="text-sm text-slate-500 mb-4">
-          <Link href="/" className="hover:text-[#0066cc]">Home</Link>
-          <span className="mx-2">/</span>
-          <Link href="/tools" className="hover:text-[#0066cc]">Tools</Link>
-          <span className="mx-2">/</span>
-          <span className="text-slate-700">{tool.name}</span>
+          <Link href="/" className="inline-flex min-h-[44px] items-center px-1 hover:text-[#0066cc]">Home</Link>
+          <span className="mx-1" aria-hidden="true">/</span>
+          <Link href="/tools" className="inline-flex min-h-[44px] items-center px-1 hover:text-[#0066cc]">Tools</Link>
+          <span className="mx-1" aria-hidden="true">/</span>
+          <span aria-current="page" className="text-slate-700">{tool.name}</span>
         </nav>
         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
           {tool.heading[0]} <span className="text-[#0066cc]">{tool.heading[1]}</span>
@@ -48,7 +48,7 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
       </header>
 
       {/* The tool */}
-      <main className={`${tool.wide ? "max-w-6xl" : "max-w-4xl"} mx-auto px-4 w-full relative z-10 mb-16`}>
+      <main id="main-content" className={`${tool.wide ? "max-w-6xl" : "max-w-4xl"} mx-auto px-4 w-full relative z-10 mb-16`}>
         <div className="bg-white shadow-sm border border-slate-200 rounded-xl p-4 md:p-8">{children}</div>
       </main>
 

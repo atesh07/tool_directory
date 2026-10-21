@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Info, RotateCcw, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, RotateCcw, X } from "lucide-react";
 
 /** Inline message shown above a tool when something goes wrong, with a way to retry. */
 export default function ErrorNotice({
@@ -15,30 +15,33 @@ export default function ErrorNotice({
   retryLabel?: string;
   onDismiss?: () => void;
   /** "info" is a calm blue note for things that worked but need explaining */
-  tone?: "error" | "info";
+  tone?: "error" | "info" | "success";
 }) {
   if (!message) return null;
-  const info = tone === "info";
+  const palette =
+    tone === "success"
+      ? "border-green-200 bg-green-50 text-green-900"
+      : tone === "info"
+        ? "border-blue-200 bg-blue-50 text-blue-900"
+        : "border-red-200 bg-red-50 text-red-800";
+  const Icon = tone === "success" ? CheckCircle2 : tone === "info" ? Info : AlertTriangle;
   return (
-    <div
-      role={info ? "status" : "alert"}
-      className={`flex items-start gap-3 rounded-xl border p-4 ${info ? "border-blue-200 bg-blue-50 text-blue-900" : "border-red-200 bg-red-50 text-red-800"}`}
-    >
-      {info ? <Info className="w-5 h-5 mt-0.5 shrink-0" /> : <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />}
+    <div role={tone === "error" ? "alert" : "status"} className={`flex items-start gap-3 rounded-xl border p-4 ${palette}`}>
+      <Icon className="w-5 h-5 mt-0.5 shrink-0" aria-hidden="true" />
       <div className="flex-1 text-sm leading-relaxed">
         <p className="font-medium">{message}</p>
         {onRetry && (
           <button
             onClick={onRetry}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-white border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+            className="mt-2 inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> {retryLabel}
+            <RotateCcw className="w-4 h-4" aria-hidden="true" /> {retryLabel}
           </button>
         )}
       </div>
       {onDismiss && (
-        <button onClick={onDismiss} aria-label="Dismiss message" className="opacity-60 hover:opacity-100">
-          <X className="w-4 h-4" />
+        <button onClick={onDismiss} aria-label="Dismiss message" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg opacity-70 hover:opacity-100">
+          <X className="w-4 h-4" aria-hidden="true" />
         </button>
       )}
     </div>

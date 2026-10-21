@@ -3,10 +3,11 @@
 import { Fragment, useState, useRef, useEffect } from "react";
 import type { PDFDocument as PDFDocumentType } from "pdf-lib";
 import ErrorNotice from "@/components/tools/ErrorNotice";
+import UploadZone from "@/components/tools/UploadZone";
 import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
 import { downloadBlob } from "@/lib/download";
 import { loadWebFace, type WebFace } from "./webFonts";
-import { RefreshCcw, Download, Trash2, Lock, Bold, Italic } from "lucide-react";
+import { RefreshCcw, Download, Trash2, Bold, Italic, ZoomIn, ZoomOut } from "lucide-react";
 
 const SCALE = 1.5;
 // Resolution used when a PDF has to be rebuilt from page images (protected files)
@@ -205,13 +206,17 @@ export default function ToolClient() {
     const [fonts, setFonts] = useState<FontInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [done, setDone] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     // Pages with a rotation or an offset page box cannot be edited in place; the PDF is rebuilt from page images instead
     const needsFlatRef = useRef(false);
     // true: every line is first rebuilt in a matching font, so edits never change the look of a line
     const [convertAll, setConvertAll] = useState(true);
     const [activeKey, setActiveKey] = useState<{ page: number; id: number } | null>(null);
-    const [isDragging, setIsDragging] = useState(false);
+    // The page picture is 1.5x its real size; scale it to fit the screen, with zoom buttons for small phones
+    const pagesRef = useRef<HTMLDivElement>(null);
+    const [avail, setAvail] = useState(0);
+    const [zoom, setZoom] = useState(1);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pdfjsRef = useRef<any>(null);
     // Original font programs pulled out of the PDF, keyed by font object name
@@ -229,6 +234,15 @@ export default function ToolClient() {
         };
         loadPdfJs();
     }, []);
+
+    useEffect(() => {
+        const el = pagesRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(() => setAvail(el.clientWidth));
+        ro.observe(el);
+        setAvail(el.clientWidth);
+        return () => ro.disconnect();
+    }, [pages.length]);
 
     const handleFile = async (selectedFile: File) => {
         setError(null);
@@ -250,6 +264,8 @@ export default function ToolClient() {
         }
 
         needsFlatRef.current = false;
+        setZoom(1);
+        setDone(null);
         setLoading(true);
         setFile(selectedFile);
         // Start downloading the save-time libraries while the user reads and edits
@@ -721,6 +737,7 @@ export default function ToolClient() {
 
             const bytes = await pdfDoc.save();
             downloadBlob(new Blob([bytes as unknown as BlobPart], { type: "application/pdf" }), `edited_${file.name}`);
+            setDone(`edited_${file.name} was downloaded. Check your Downloads folder.`);
             const notes: string[] = [];
             if (flat) notes.push("This PDF is protected or has rotated pages, so it was saved as page images with your text drawn on top. It looks the same, but unchanged text and links can no longer be selected or clicked.");
             if (skipped > 0) notes.push(`${skipped} text run${skipped === 1 ? "" : "s"} could not be redrawn and kept the original text.`);
@@ -739,6 +756,7 @@ export default function ToolClient() {
     };
 
     const startNew = () => {
+        setDone(null);
         setError(null);
         setNotice(null);
         setFile(null);
@@ -746,127 +764,118 @@ export default function ToolClient() {
         setFonts([]);
     };
 
-    const onDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
 
-    const onDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleFile(e.dataTransfer.files[0]);
-        }
-    };
 
     return (
         <div className="space-y-8">
             <ErrorNotice message={error} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setError(null)} />
             <ErrorNotice message={notice} tone="info" onDismiss={() => setNotice(null)} />
+            <ErrorNotice message={done} tone="success" onRetry={startNew} retryLabel="Edit another PDF" onDismiss={() => setDone(null)} />
             <style dangerouslySetInnerHTML={{ __html: FALLBACK_CSS }} />
             {!file || pages.length === 0 ? (
                 <div className="max-w-3xl mx-auto">
-                    <div
-                        onDragOver={onDragOver}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDrop={onDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`
-              border-[2px] border-dashed p-10 md:p-14 text-center cursor-pointer
-              transition-all duration-300 group
-              ${isDragging || loading
-                                ? "border-[#0062cc] bg-blue-50/50"
-                                : "border-slate-300 hover:border-[#0062cc] bg-white"}
-            `}
-                    >
-                        <input
-                            type="file"
-                            accept="application/pdf"
-                            ref={fileInputRef}
-                            onChange={(e) => e.target.files && handleFile(e.target.files[0])}
-                            className="hidden"
-                        />
-                        <div className="flex flex-col items-center justify-center space-y-4">
-                            {loading ? (
-                                <>
-                                    <RefreshCcw className="w-10 h-10 animate-spin text-[#0062cc]" />
-                                    <p className="text-xl font-medium text-slate-800">Reading PDF...</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-slate-500 font-medium">Drop PDF file here or</p>
-                                    <button className="bg-[#0062cc] hover:bg-[#0052ad] text-white text-lg font-bold py-3 px-12 rounded-lg transition-colors shadow-sm">
-                                        Select PDF
-                                    </button>
-                                    <div className="mt-4 flex items-center justify-center text-sm text-slate-500 gap-1.5 pt-2">
-                                        <Lock className="w-4 h-4" /> Your files are secure
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                    <UploadZone
+                        inputRef={fileInputRef}
+                        accept="application/pdf"
+                        noun="PDF"
+                        buttonLabel="Select PDF"
+                        hint="PDF files only, up to 150 MB. Password-protected PDFs cannot be opened."
+                        onFiles={(files) => handleFile(files[0])}
+                        loading={loading}
+                        loadingText={"Reading PDF..."}
+                    />
                 </div>
             ) : (
                 <div className="space-y-6">
                     {/* Action Header */}
-                    <div className="flex flex-col md:flex-row justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 gap-4">
-                        <div className="flex flex-col">
-                            <span className="font-semibold text-slate-700">{file.name}</span>
+                    <div className="flex flex-col md:flex-row justify-between md:items-center bg-slate-50 p-4 rounded-xl border border-slate-200 gap-4">
+                        <div className="flex min-w-0 flex-col">
+                            <span className="truncate font-semibold text-slate-700">{file.name}</span>
                             <span className="text-sm text-slate-500">
-                                Click any text to edit it. {editedCount} change{editedCount === 1 ? "" : "s"} so far.
+                                Tap or click any text to edit it. {editedCount} change{editedCount === 1 ? "" : "s"} so far.
                             </span>
                         </div>
-                        <div className="flex items-center gap-2 w-full md:w-auto">
+                        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
                             <button
                                 onClick={processAndDownload}
                                 disabled={loading || editedCount === 0}
-                                className="flex items-center gap-2 px-5 py-2 bg-[#0062cc] hover:bg-[#0052ad] disabled:opacity-50 text-white rounded-lg transition shadow-sm font-bold text-sm"
+                                aria-busy={loading}
+                                className="flex min-h-[48px] flex-1 items-center justify-center gap-2 px-6 bg-[#0062cc] hover:bg-[#0052ad] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 text-white rounded-xl transition shadow-sm font-bold md:flex-none"
                             >
-                                {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                                Download PDF
+                                {loading ? <RefreshCcw className="w-5 h-5 animate-spin" aria-hidden="true" /> : <Download className="w-5 h-5" aria-hidden="true" />}
+                                {loading ? "Saving..." : editedCount === 0 ? "Edit text to download" : "Download PDF"}
                             </button>
                             <button
                                 onClick={startNew}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition shadow-sm font-medium text-sm ml-auto md:ml-2"
+                                disabled={loading}
+                                className="flex min-h-[48px] items-center gap-2 px-4 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <Trash2 className="w-4 h-4" /> Discard
+                                <Trash2 className="w-4 h-4" aria-hidden="true" /> Discard
                             </button>
                         </div>
                     </div>
 
-                    {/* Style toolbar */}
-                    <div className="sticky top-2 z-20 flex items-center gap-2 bg-white/95 backdrop-blur border border-slate-200 rounded-xl px-4 py-2 shadow-sm w-fit mx-auto">
+                    {/* Style and zoom toolbar */}
+                    <div role="toolbar" aria-label="Text style and zoom" className="sticky top-2 z-20 mx-auto flex w-full flex-wrap items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 shadow-sm backdrop-blur sm:w-fit">
                         <button
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => toggleStyle("bold")}
-                            disabled={!activeItem}
+                            disabled={!activeItem || loading}
+                            aria-label="Bold"
+                            aria-pressed={!!activeItem?.bold}
                             title="Bold (Ctrl/Cmd+B)"
-                            className={`p-2 rounded-lg border transition disabled:opacity-40 ${activeItem?.bold ? "bg-[#0062cc] text-white border-[#0062cc]" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"}`}
+                            className={`grid h-11 w-11 place-items-center rounded-lg border transition disabled:opacity-40 ${activeItem?.bold ? "bg-[#0062cc] text-white border-[#0062cc]" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"}`}
                         >
-                            <Bold className="w-4 h-4" />
+                            <Bold className="w-5 h-5" aria-hidden="true" />
                         </button>
                         <button
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => toggleStyle("italic")}
-                            disabled={!activeItem}
+                            disabled={!activeItem || loading}
+                            aria-label="Italic"
+                            aria-pressed={!!activeItem?.italic}
                             title="Italic (Ctrl/Cmd+I)"
-                            className={`p-2 rounded-lg border transition disabled:opacity-40 ${activeItem?.italic ? "bg-[#0062cc] text-white border-[#0062cc]" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"}`}
+                            className={`grid h-11 w-11 place-items-center rounded-lg border transition disabled:opacity-40 ${activeItem?.italic ? "bg-[#0062cc] text-white border-[#0062cc]" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"}`}
                         >
-                            <Italic className="w-4 h-4" />
+                            <Italic className="w-5 h-5" aria-hidden="true" />
                         </button>
-                        <label className="flex items-center gap-1.5 text-xs text-slate-600 pl-3 ml-1 border-l border-slate-200 cursor-pointer select-none">
-                            <input type="checkbox" checked={convertAll} onChange={(e) => setConvertAll(e.target.checked)} />
+                        <span className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" aria-hidden="true" />
+                        <button
+                            onClick={() => setZoom((z) => Math.max(0.5, +(z / 1.25).toFixed(2)))}
+                            disabled={zoom <= 0.5}
+                            aria-label="Zoom out"
+                            className="grid h-11 w-11 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                        >
+                            <ZoomOut className="w-5 h-5" aria-hidden="true" />
+                        </button>
+                        <button
+                            onClick={() => setZoom(1)}
+                            aria-label="Fit page to screen width"
+                            className="min-h-[44px] min-w-[64px] rounded-lg border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                        >
+                            {Math.round(zoom * 100)}%
+                        </button>
+                        <button
+                            onClick={() => setZoom((z) => Math.min(4, +(z * 1.25).toFixed(2)))}
+                            disabled={zoom >= 4}
+                            aria-label="Zoom in"
+                            className="grid h-11 w-11 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                        >
+                            <ZoomIn className="w-5 h-5" aria-hidden="true" />
+                        </button>
+                        <label className="flex min-h-[44px] cursor-pointer select-none items-center gap-2 border-slate-200 px-2 text-sm text-slate-700 sm:border-l sm:pl-3">
+                            <input type="checkbox" className="h-4 w-4" checked={convertAll} onChange={(e) => setConvertAll(e.target.checked)} />
                             Convert all text first
                         </label>
-                        <span className="text-xs text-slate-500 pl-1">
-                            {activeItem ? "Applies to the selected text (or the whole line if nothing is selected)" : "Click a text line, then choose Bold or Italic"}
-                        </span>
+                        <p className="w-full text-center text-xs text-slate-500" aria-live="polite">
+                            {activeItem ? "Bold and Italic apply to the selected text, or the whole line if nothing is selected." : "Tap a line of text, then choose Bold or Italic. Use zoom to make text larger."}
+                        </p>
                     </div>
 
                     {/* Fonts found in the PDF */}
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                        <p className="text-sm font-semibold text-slate-700 mb-2">Fonts detected in this PDF</p>
-                        <div className="flex flex-wrap gap-2">
+                    <details className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Fonts detected in this PDF ({fonts.length})</summary>
+                        <div className="mt-3 flex flex-wrap gap-2">
                             {fonts.map((f) => (
                                 <span
                                     key={f.name}
@@ -876,13 +885,16 @@ export default function ToolClient() {
                                 </span>
                             ))}
                         </div>
-                    </div>
+                    </details>
 
                     {/* Pages */}
-                    <div className="flex flex-col items-center gap-8 overflow-x-auto">
-                        {pages.map((pg, pageIdx) => (
-                            <div key={pageIdx} className="relative shadow-md border border-slate-200 bg-white shrink-0" style={{ width: pg.width, height: pg.height }}>
-                                <img src={pg.image} alt={`Page ${pageIdx + 1}`} width={pg.width} height={pg.height} draggable={false} className="absolute inset-0 select-none" />
+                    <div ref={pagesRef} className="flex flex-col items-center gap-6 overflow-x-auto">
+                        {pages.map((pg, pageIdx) => {
+                          const sc = (avail ? Math.min(1, avail / pg.width) : 1) * zoom;
+                          return (
+                            <div key={pageIdx} className="relative shrink-0 border border-slate-200 bg-white shadow-md" style={{ width: pg.width * sc, height: pg.height * sc }}>
+                            <div className="absolute left-0 top-0" style={{ width: pg.width, height: pg.height, transform: `scale(${sc})`, transformOrigin: "0 0" }}>
+                                <img src={pg.image} alt={`Page ${pageIdx + 1} of the PDF`} width={pg.width} height={pg.height} draggable={false} className="absolute inset-0 select-none" />
 
                                 {pg.items.filter((it) => !it.locked).map((it) => {
                                     const key = `${pageIdx}-${it.id}`;
@@ -923,6 +935,8 @@ export default function ToolClient() {
                                         )}
                                         <div
                                             contentEditable
+                                            role="textbox"
+                                            aria-label={`Edit text on page ${pageIdx + 1}: ${it.original.slice(0, 50)}`}
                                             data-item={`${pageIdx}:${it.id}`}
                                             suppressContentEditableWarning
                                             spellCheck={false}
@@ -959,7 +973,9 @@ export default function ToolClient() {
                                     );
                                 })}
                             </div>
-                        ))}
+                            </div>
+                          );
+                        })}
                     </div>
                 </div>
             )}

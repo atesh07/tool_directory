@@ -1,6 +1,7 @@
 "use client";
 
 import ErrorNotice from "@/components/tools/ErrorNotice";
+import UploadZone from "@/components/tools/UploadZone";
 import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
 import { downloadBlob } from "@/lib/download";
 
@@ -12,9 +13,9 @@ import {
   Trash2, 
   Download, 
   FileCheck, 
-  GripVertical,
   MousePointer2,
-  Lock
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 // PDF.js is only needed once a file is added, and its worker is served from our own site (not a third-party CDN)
@@ -37,6 +38,7 @@ export default function ToolClient() {
   const [items, setItems] = useState<PDFItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   
@@ -66,9 +68,10 @@ export default function ToolClient() {
   };
 
   // --- Upload Handler ---
-  const handleFileUpload = async (files: FileList | null) => {
+  const handleFileUpload = async (files: FileList | File[] | null) => {
     if (!files) return;
     setError(null);
+    setDone(null);
     setLoading(true);
 
     // Check every file first and say exactly which ones were left out and why
@@ -107,6 +110,15 @@ export default function ToolClient() {
     setDraggedIndex(null);
   };
 
+  // Keyboard and touch friendly alternative to dragging
+  const moveItem = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= items.length) return;
+    const next = [...items];
+    [next[index], next[target]] = [next[target], next[index]];
+    setItems(next);
+  };
+
   // --- Drag & Drop Container Handlers ---
   const onDragContainer = (e: React.DragEvent) => {
     e.preventDefault();
@@ -124,7 +136,10 @@ export default function ToolClient() {
 
   // --- Actions ---
   const removeFile = (id: string) => setItems(prev => prev.filter(item => item.id !== id));
-  const clearAll = () => setItems([]);
+  const clearAll = () => {
+    setItems([]);
+    setDone(null);
+  };
 
   const mergePdfs = async () => {
     // Loaded only when needed, so the page itself stays small and fast
@@ -147,7 +162,9 @@ export default function ToolClient() {
       const pdfBuffer = new ArrayBuffer(pdfBytes.byteLength);
       new Uint8Array(pdfBuffer).set(pdfBytes);
       const blob = new Blob([pdfBuffer], { type: "application/pdf" });
-      downloadBlob(blob, `merged_${Date.now()}.pdf`);
+      const name = `merged_${Date.now()}.pdf`;
+      downloadBlob(blob, name);
+      setDone(`${name} was downloaded with ${items.length} files combined. Check your Downloads folder.`);
     } catch (err) {
       setError(current ? `"${current}" could not be merged. ${pdfErrorMessage(err)}` : `Could not merge these files. ${pdfErrorMessage(err)}`);
     } finally {
@@ -158,39 +175,22 @@ export default function ToolClient() {
   return (
     <div className="space-y-8">
       <ErrorNotice message={error} onDismiss={() => setError(null)} />
+      <ErrorNotice message={done} tone="success" onRetry={clearAll} retryLabel="Merge more files" onDismiss={() => setDone(null)} />
       {/* Upload Area */}
-      <div
-        onDragOver={onDragContainer}
-        onDragEnter={onDragContainer}
-        onDragLeave={onDragContainer}
-        onDrop={onDropContainer}
-        onClick={() => fileInputRef.current?.click()}
-        className={`group border-2 border-dashed max-w-3xl mx-auto py-16 px-10 rounded-none text-center cursor-pointer transition-all duration-300 ease-in-out bg-white shadow-sm
-          ${isDragging 
-            ? "border-[#0066cc] bg-blue-50/30 scale-[1.01]" 
-            : "border-slate-300 hover:bg-slate-50/50 hover:border-slate-400"}`}
-      >
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept=".pdf"
+      <div className="max-w-3xl mx-auto">
+        <UploadZone
+          inputRef={fileInputRef}
+          accept=".pdf,application/pdf"
           multiple
-          onChange={(e) => handleFileUpload(e.target.files)}
-          className="hidden"
+          noun="PDF files"
+          buttonLabel={items.length ? "Add more PDFs" : "Select PDFs"}
+          hint="PDF files only, up to 150 MB each. Add two or more. Password-protected PDFs cannot be merged."
+          onFiles={handleFileUpload}
+          loading={loading && !items.length}
+          loadingText="Reading your PDFs..."
+          disabled={loading}
+          compact={items.length > 0}
         />
-
-        <div className="flex flex-col items-center justify-center space-y-5">
-          <p className="text-slate-500 text-sm">{isDragging ? "Release to upload" : "Drop PDF files here or"}</p>
-          
-          <div className="bg-[#0066cc] hover:bg-[#005bb5] text-white font-semibold text-lg py-3 px-12 rounded-lg transition-colors shadow-sm">
-            Select PDFs
-          </div>
-
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs pt-2">
-            <Lock className="w-3.5 h-3.5" />
-            <span>Your files are secure</span>
-          </div>
-        </div>
       </div>
 
       {/* Draggable Grid */}
@@ -203,63 +203,72 @@ export default function ToolClient() {
             </h3>
             <button
               onClick={clearAll}
-              className="text-red-500 hover:text-red-700 text-sm font-semibold flex items-center gap-1 transition-colors"
+              disabled={loading}
+              className="flex min-h-[44px] items-center gap-1 rounded-lg px-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
             >
               <Trash2 className="w-4 h-4" /> Clear All
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <ol className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {items.map((item, index) => (
-              <div
+              <li
                 key={item.id}
-                draggable
+                draggable={!loading}
                 onDragStart={() => handleReorderStart(index)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleReorderDrop(index)}
-                className={`relative group aspect-[3/4.2] rounded-2xl border-2 bg-slate-50 cursor-grab active:cursor-grabbing transition-all
-                  ${draggedIndex === index 
-                    ? "opacity-40 border-indigo-400 scale-95" 
-                    : "border-transparent hover:border-indigo-200 hover:shadow-xl hover:-translate-y-1"}`}
+                className={`relative flex flex-col overflow-hidden rounded-2xl border-2 bg-slate-50 transition-all sm:cursor-grab
+                  ${draggedIndex === index ? "opacity-40 border-indigo-400 scale-95" : "border-slate-200 hover:border-indigo-200 hover:shadow-lg"}`}
               >
                 {/* PDF Thumbnail */}
-                <div className="w-full h-full overflow-hidden rounded-xl">
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-white">
                   {item.preview ? (
-                    <img src={item.preview} alt="PDF Preview" className="w-full h-full object-cover pointer-events-none" />
+                    <img src={item.preview} alt="" className="h-full w-full object-cover pointer-events-none" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <FileText className="w-12 h-12 text-slate-200" />
+                    <div className="flex h-full w-full items-center justify-center">
+                      <FileText className="h-12 w-12 text-slate-300" aria-hidden="true" />
                     </div>
                   )}
-                </div>
-
-                {/* Badge & Icons */}
-                <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-black px-2 py-1 rounded-md backdrop-blur-sm">
-                  #{index + 1}
-                </div>
-                <div className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                  <GripVertical className="w-4 h-4 text-slate-600" />
-                </div>
-
-                {/* Remove Action */}
-                <div className="absolute inset-0 bg-indigo-900/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="absolute left-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white">#{index + 1}</span>
+                  {/* Always visible so it works on touch screens and with a keyboard */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); removeFile(item.id); }}
-                    className="bg-red-500 text-white p-2.5 rounded-full hover:bg-red-600 shadow-xl transform hover:scale-110 transition-all"
+                    onClick={() => removeFile(item.id)}
+                    disabled={loading}
+                    aria-label={`Remove ${item.file.name}`}
+                    className="absolute right-2 top-2 grid h-11 w-11 place-items-center rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 disabled:opacity-50"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="h-5 w-5" aria-hidden="true" />
                   </button>
                 </div>
 
-                {/* Filename label */}
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/50 to-transparent">
-                   <p className="text-[10px] text-white font-medium truncate px-1">{item.file.name}</p>
+                {/* Name and order controls */}
+                <div className="flex flex-col gap-2 p-2">
+                  <p className="truncate text-xs font-medium text-slate-700" title={item.file.name}>{item.file.name}</p>
+                  <div className="flex gap-2">
+                  <button
+                    onClick={() => moveItem(index, -1)}
+                    disabled={index === 0 || loading}
+                    aria-label={`Move ${item.file.name} earlier`}
+                    className="grid h-11 flex-1 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  <button
+                    onClick={() => moveItem(index, 1)}
+                    disabled={index === items.length - 1 || loading}
+                    aria-label={`Move ${item.file.name} later`}
+                    className="grid h-11 flex-1 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                  >
+                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  </div>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
-          <p className="text-center text-xs text-slate-400 mt-6 font-medium tracking-wide italic">
-            Tip: Drag and drop cards to change the merge sequence.
+          </ol>
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Tip: use the arrows, or drag the cards, to change the merge order.
           </p>
         </div>
       )}
@@ -269,16 +278,22 @@ export default function ToolClient() {
         <button
           onClick={mergePdfs}
           disabled={items.length < 2 || loading}
-          className={`w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 transition-colors shadow-sm
+          aria-busy={loading}
+          className={`w-full min-h-[56px] py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-colors shadow-sm
             ${items.length < 2 || loading
               ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
               : "bg-[#0066cc] hover:bg-[#005bb5] text-white"}`}
         >
           {loading ? (
-            <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+            <>
+              <div className="h-6 w-6 animate-spin rounded-full border-4 border-white/30 border-t-white" aria-hidden="true" />
+              Working...
+            </>
+          ) : items.length < 2 ? (
+            <>Add {items.length === 0 ? "two or more PDFs" : "one more PDF"} to merge</>
           ) : (
             <>
-              <Download className="w-6 h-6" />
+              <Download className="w-6 h-6" aria-hidden="true" />
               Merge {items.length} PDF Files
             </>
           )}

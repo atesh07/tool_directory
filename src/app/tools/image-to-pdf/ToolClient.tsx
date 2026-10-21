@@ -1,6 +1,7 @@
 "use client";
 
 import ErrorNotice from "@/components/tools/ErrorNotice";
+import UploadZone from "@/components/tools/UploadZone";
 import { checkImageFile } from "@/lib/pdfFiles";
 
 import { useState, useRef } from "react";
@@ -11,8 +12,8 @@ import {
   Trash2, 
   Download, 
   Image as ImageIcon, 
-  GripVertical,
-  Lock 
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export default function ToolClient() {
@@ -20,28 +21,37 @@ export default function ToolClient() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
   const [progress, setProgress] = useState("");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // --- Upload Handler ---
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target;
-    if (input.files && input.files.length > 0) {
-      setError(null);
-      const picked = Array.from(input.files);
-      // Allow choosing the same file again after it was removed
-      input.value = "";
-      const checks = await Promise.all(picked.map(checkImageFile));
-      const problems = checks.filter((c): c is string => !!c);
-      const newFiles = picked.filter((_, i) => !checks[i]);
-      if (problems.length) setError(`${problems.join(" ")} Only JPG and PNG images can be added.`);
-      const newUrls = newFiles.map((file) => URL.createObjectURL(file));
+  const handleImageUpload = async (picked: File[]) => {
+    if (picked.length === 0) return;
+    setError(null);
+    setDone(null);
+    const checks = await Promise.all(picked.map(checkImageFile));
+    const problems = checks.filter((c): c is string => !!c);
+    const newFiles = picked.filter((_, i) => !checks[i]);
+    if (problems.length) setError(`${problems.join(" ")} Only JPG and PNG images up to 30 MB can be added.`);
+    const newUrls = newFiles.map((file) => URL.createObjectURL(file));
 
-      setImages((prev) => [...prev, ...newFiles]);
-      setImageUrls((prev) => [...prev, ...newUrls]);
-    }
+    setImages((prev) => [...prev, ...newFiles]);
+    setImageUrls((prev) => [...prev, ...newUrls]);
+  };
+
+  // Keyboard and touch friendly alternative to dragging
+  const moveImage = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= images.length) return;
+    const nextImages = [...images];
+    const nextUrls = [...imageUrls];
+    [nextImages[index], nextImages[target]] = [nextImages[target], nextImages[index]];
+    [nextUrls[index], nextUrls[target]] = [nextUrls[target], nextUrls[index]];
+    setImages(nextImages);
+    setImageUrls(nextUrls);
   };
 
   // --- Drag & Drop Handlers ---
@@ -89,6 +99,7 @@ export default function ToolClient() {
 
   // --- Clear All ---
   const clearAll = () => {
+    setDone(null);
     imageUrls.forEach((url) => URL.revokeObjectURL(url));
     setImages([]);
     setImageUrls([]);
@@ -153,6 +164,7 @@ export default function ToolClient() {
 
       current = "";
       pdf.save("converted-document.pdf");
+      setDone(`converted-document.pdf was downloaded with ${images.length} page${images.length === 1 ? "" : "s"}. Check your Downloads folder.`);
     } catch (err) {
       setError(
         current
@@ -168,32 +180,20 @@ export default function ToolClient() {
   return (
     <div className="space-y-8">
       <ErrorNotice message={error} onDismiss={() => setError(null)} />
+      <ErrorNotice message={done} tone="success" onRetry={clearAll} retryLabel="Convert more images" onDismiss={() => setDone(null)} />
       {/* Upload Area */}
-      <div
-        onClick={() => fileInputRef.current?.click()}
-        className="group border-2 border-dashed border-slate-300 bg-white hover:bg-slate-50/50 hover:border-slate-400 max-w-3xl mx-auto rounded-none py-16 px-10 text-center cursor-pointer transition-all duration-300 ease-in-out shadow-sm"
-      >
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept="image/png, image/jpeg, image/jpg"
+      <div className="max-w-3xl mx-auto">
+        <UploadZone
+          accept="image/png,image/jpeg"
           multiple
-          onChange={handleImageUpload}
-          className="hidden"
+          noun="images"
+          buttonLabel={images.length ? "Add more images" : "Select Images"}
+          hint="JPG and PNG images, up to 30 MB each. Large photos are scaled to print size automatically."
+          onFiles={handleImageUpload}
+          disabled={loading}
+          inputRef={fileInputRef}
+          compact={images.length > 0}
         />
-
-        <div className="flex flex-col items-center justify-center space-y-5">
-          <p className="text-slate-500 text-sm">Drop image files here or</p>
-          
-          <div className="bg-[#0066cc] hover:bg-[#005bb5] text-white font-semibold text-lg py-3 px-12 rounded-lg transition-colors shadow-sm">
-            Select Images
-          </div>
-
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs pt-2">
-            <Lock className="w-3.5 h-3.5" />
-            <span>Your files are secure</span>
-          </div>
-        </div>
       </div>
 
       {/* Draggable Grid */}
@@ -206,64 +206,63 @@ export default function ToolClient() {
             </h3>
             <button
               onClick={clearAll}
-              className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center gap-1 transition-colors"
+              disabled={loading}
+              className="flex min-h-[44px] items-center gap-1 rounded-lg px-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
             >
               <Trash2 className="w-4 h-4" /> Clear All
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <ol className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {imageUrls.map((url, index) => (
-              <div
-                key={index}
-                draggable
+              <li
+                key={url}
+                draggable={!loading}
                 onDragStart={() => handleDragStart(index)}
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(index)}
-                className={`
-                  relative group aspect-[3/4] rounded-xl overflow-hidden border-2 bg-slate-50 cursor-grab active:cursor-grabbing transition-all
-                  ${
-                    draggedIndex === index
-                      ? "opacity-50 border-indigo-400 scale-95"
-                      : "border-transparent hover:border-indigo-200 hover:shadow-md"
-                  }
-                `}
+                className={`relative flex flex-col overflow-hidden rounded-xl border-2 bg-slate-50 transition-all sm:cursor-grab
+                  ${draggedIndex === index ? "opacity-50 border-indigo-400 scale-95" : "border-slate-200 hover:border-indigo-200 hover:shadow-md"}`}
               >
-                {/* Image */}
-                <img
-                  src={url}
-                  alt={`Page ${index + 1}`}
-                  className="w-full h-full object-cover pointer-events-none"
-                />
-
-                {/* Page Number Badge */}
-                <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-md backdrop-blur-sm">
-                  Page {index + 1}
-                </div>
-
-                {/* Drag Handle Icon (Visual Cue) */}
-                <div className="absolute top-2 right-2 p-1 bg-white/80 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                  <GripVertical className="w-4 h-4 text-slate-600" />
-                </div>
-
-                {/* Remove Button Overlay */}
-                <div className="absolute inset-0 bg-indigo-900/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-white">
+                  <img src={url} alt="" className="h-full w-full object-cover pointer-events-none" />
+                  <span className="absolute left-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white">Page {index + 1}</span>
+                  {/* Always visible so it works on touch screens and with a keyboard */}
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent drag start when clicking remove
-                      removeImage(index);
-                    }}
-                    className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-lg transform hover:scale-110 transition-all"
-                    title="Remove Image"
+                    onClick={() => removeImage(index)}
+                    disabled={loading}
+                    aria-label={`Remove ${images[index]?.name ?? `image ${index + 1}`}`}
+                    className="absolute right-2 top-2 grid h-11 w-11 place-items-center rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 disabled:opacity-50"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="h-5 w-5" aria-hidden="true" />
                   </button>
                 </div>
-              </div>
+                <div className="flex flex-col gap-2 p-2">
+                  <p className="truncate text-xs font-medium text-slate-700" title={images[index]?.name}>{images[index]?.name}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => moveImage(index, -1)}
+                      disabled={index === 0 || loading}
+                      aria-label={`Move ${images[index]?.name ?? `image ${index + 1}`} earlier`}
+                      className="grid h-11 flex-1 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                    >
+                      <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={() => moveImage(index, 1)}
+                      disabled={index === images.length - 1 || loading}
+                      aria-label={`Move ${images[index]?.name ?? `image ${index + 1}`} later`}
+                      className="grid h-11 flex-1 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                    >
+                      <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              </li>
             ))}
-          </div>
-          <p className="text-center text-xs text-slate-400 mt-4">
-            Tip: Drag and drop images to change the PDF page order.
+          </ol>
+          <p className="mt-4 text-center text-sm text-slate-500">
+            Tip: use the arrows, or drag the pictures, to change the PDF page order.
           </p>
         </div>
       )}
@@ -272,11 +271,12 @@ export default function ToolClient() {
       <div className="flex flex-col gap-3">
         <button
           onClick={convertToPdf}
-          disabled={loading}
+          disabled={loading || images.length === 0}
+          aria-busy={loading}
           className={`
-            w-full py-4 rounded-lg font-semibold text-lg flex items-center justify-center gap-2 transition-colors shadow-sm
+            w-full min-h-[56px] py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-colors shadow-sm
             ${
-              loading
+              loading || images.length === 0
                 ? "bg-slate-300 text-slate-500 cursor-not-allowed"
                 : "bg-[#0066cc] hover:bg-[#005bb5] text-white"
             }
@@ -284,6 +284,8 @@ export default function ToolClient() {
         >
           {loading ? (
             progress || "Converting..."
+          ) : images.length === 0 ? (
+            <>Add images to convert</>
           ) : (
             <>
               <Download className="w-6 h-6" />
