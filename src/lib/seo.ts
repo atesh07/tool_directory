@@ -23,6 +23,7 @@ export function buildMetadata({ title, description, path, keywords, noindex }: P
     alternates: { canonical: path },
     openGraph: {
       type: "website",
+      locale: "en_US",
       siteName: SITE.name,
       title: `${title} | ${SITE.name}`,
       description,
@@ -96,17 +97,5 @@ export const breadcrumbJsonLd = (items: { name: string; path: string }[]) => ({
     position: i + 1,
     name: item.name,
     item: absoluteUrl(item.path),
-  })),
-});
-
-export const howToJsonLd = (tool: Tool) => ({
-  "@context": "https://schema.org",
-  "@type": "HowTo",
-  name: `How to use ${tool.name}`,
-  step: tool.steps.map((s, i) => ({
-    "@type": "HowToStep",
-    position: i + 1,
-    name: s.title,
-    text: s.text,
   })),
 });

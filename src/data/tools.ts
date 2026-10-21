@@ -37,8 +37,9 @@ export const SITE = {
   tagline: "Free online PDF tools",
   description:
     "Free online PDF tools that run in your browser: edit, merge, split, rotate, convert and manage PDFs without uploading your files.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://toolstree.com",
-  email: "support@toolstree.com",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  // Shown on the Contact, Privacy and Terms pages. Set NEXT_PUBLIC_CONTACT_EMAIL to use another address.
+  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "ehteshamshaikh101@gmail.com",
 };
 
 const privacyFaq: Faq = {

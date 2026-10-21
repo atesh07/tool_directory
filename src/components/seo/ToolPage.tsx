@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Check, ChevronDown, Lock } from "lucide-react";
 import JsonLd from "./JsonLd";
 import { TOOLS, getTool, toolPath } from "@/data/tools";
-import { breadcrumbJsonLd, faqJsonLd, howToJsonLd, softwareJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, faqJsonLd, softwareJsonLd } from "@/lib/seo";
 
 /**
  * Shared page for every tool. The server-rendered copy below the tool (steps, features, FAQ, related tools)
@@ -15,12 +15,11 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
   const others = TOOLS.filter((t) => t.slug !== slug && !tool.related.includes(t.slug));
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col pt-12">
+    <main id="main-content" className="min-h-screen bg-slate-50 flex flex-col pt-12">
       <JsonLd
         data={[
           softwareJsonLd(tool),
           faqJsonLd(tool.faq),
-          howToJsonLd(tool),
           breadcrumbJsonLd([
             { name: "Home", path: "/" },
             { name: "Tools", path: "/tools" },
@@ -48,9 +47,9 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
       </header>
 
       {/* The tool */}
-      <main id="main-content" className={`${tool.wide ? "max-w-6xl" : "max-w-4xl"} mx-auto px-4 w-full relative z-10 mb-16`}>
+      <div className={`${tool.wide ? "max-w-6xl" : "max-w-4xl"} mx-auto px-4 w-full relative z-10 mb-16`}>
         <div className="bg-white shadow-sm border border-slate-200 rounded-xl p-4 md:p-8">{children}</div>
-      </main>
+      </div>
 
       {/* How to */}
       <section className="max-w-5xl mx-auto px-4 w-full py-12" aria-labelledby="how-to">
@@ -134,6 +133,6 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
           })}
         </div>
       </section>
-    </div>
+    </main>
   );
 }

@@ -27,6 +27,7 @@ export const metadata: Metadata = {
   keywords: ["pdf tools", "edit pdf", "merge pdf", "split pdf", "rotate pdf", "image to pdf", "pdf to jpg", "word to pdf", "free pdf tools online"],
   openGraph: {
     type: "website",
+    locale: "en_US",
     siteName: SITE.name,
     title: `${SITE.name} - Free Online PDF Tools`,
     description: SITE.description,

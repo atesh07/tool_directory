@@ -1,37 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ToolsTree
 
-## Getting Started
+Free online PDF tools that run entirely in the visitor's browser: edit PDF text, merge, split, rotate, remove pages, image to PDF, PDF to image, and Word to PDF. Built with Next.js 14 (App Router), TypeScript and Tailwind CSS.
 
-First, run the development server:
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npm run lint
+npm run build      # the same step Vercel runs
+npm run seo:check -- https://your-domain.com   # technical SEO check of a live site
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+All are optional. Copy `.env.example` to `.env.local` for local work, or add them in Vercel under Settings > Environment Variables.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | What it does |
+|---|---|
+| `NEXT_PUBLIC_SITE_URL` | The public address used in canonical links, the sitemap and share cards. Leave empty on Vercel: it uses the project's production domain automatically, and switches to your custom domain as soon as you add one. |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | The email shown on the Contact, Privacy and Terms pages. |
+| `NEXT_PUBLIC_GA_ID` | Google Analytics 4 measurement ID. |
+| `NEXT_PUBLIC_GSC_VERIFICATION` | Google Search Console verification code (the content of the `google-site-verification` tag). |
+| `NEXT_PUBLIC_BING_VERIFICATION` | Bing Webmaster Tools verification code. |
 
-## Learn More
+Do not set `NODE_ENV` in Vercel. The build command is pinned in `vercel.json`.
 
-To learn more about Next.js, take a look at the following resources:
+## Where things live
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/data/tools.ts          every tool: name, text, FAQ (menus, sitemap and page tags are built from this)
+src/lib/seo.ts             metadata and structured data builders
+src/components/seo/        shared tool page template (ToolPage) and JsonLd
+src/components/tools/      UploadZone and ErrorNotice used by every tool
+src/lib/pdfFiles.ts        file checks and friendly error text
+src/app/tools/<tool>/      page.tsx (server, SEO) and ToolClient.tsx (runs in the browser)
+scripts/seo-check.mjs      the SEO checker behind `npm run seo:check`
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To add a tool: add an entry to `src/data/tools.ts`, create `src/app/tools/<slug>/` with the same two files as another tool, and it gets its menu link, sitemap entry, title, description, share card and structured data automatically.
 
-## Deploy on Vercel
+## Launch checklist for search engines
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Deploy and open the public address (Vercel > Project > Domains shows it). It must open without a Vercel login: if it asks you to sign in, turn off Settings > Deployment Protection > Vercel Authentication for production.
+2. Run `npm run seo:check -- https://your-address` and fix anything it reports.
+3. Google Search Console > Add property:
+   - URL prefix property with your address, choose the "HTML tag" method, copy only the code from `content="..."`, put it in `NEXT_PUBLIC_GSC_VERIFICATION` in Vercel, redeploy, then click Verify.
+   - Sitemaps > add `sitemap.xml` and submit.
+   - URL Inspection > paste the home page and a tool page > Request indexing. Use "Test live URL" > View tested page to see what Googlebot renders.
+4. Do the same in Bing Webmaster Tools (you can import the site from Search Console).
+5. After connecting a custom domain: add it in Vercel (Settings > Domains), make it the primary one, redeploy, add the new address as a property in Search Console, and run `seo:check` again. In Search Console use Change of Address only if you had already been indexed on the old address.
+6. Test a share card at https://www.opengraph.xyz or by pasting the page link into a chat app.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
+Structured data note: Google no longer shows FAQ or HowTo rich results for most sites, and software rich results need real user ratings, so none are faked here. The markup is still valid and helps other search engines and AI assistants understand the pages.

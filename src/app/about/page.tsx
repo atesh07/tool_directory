@@ -4,7 +4,7 @@ import { SITE, TOOLS, toolPath } from "@/data/tools";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "About ToolsTree",
+  title: "About Us",
   description: "ToolsTree offers free, private PDF tools that run in your browser. Learn why we built it and how your files stay on your device.",
   path: "/about",
 });
