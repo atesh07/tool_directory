@@ -9,6 +9,7 @@ import {
   Scissors,
   Combine,
   RotateCw,
+  Pencil,
   Menu,
   X,
   ChevronDown,
@@ -30,6 +31,7 @@ const Header = () => {
     { name: "Word to PDF", path: "/tools/word-to-pdf", icon: FileText },
     { name: "PDF to Word", path: "/tools/pdf-to-word", icon: FileText },
     { name: "Rotate PDF", path: "/tools/rotate-pdf", icon: RotateCw },
+    { name: "Edit PDF", path: "/tools/edit-pdf", icon: Pencil },
   ];
 
   // Helper to close mobile menus after navigation
