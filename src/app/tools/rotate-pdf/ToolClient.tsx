@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { PDFDocument, degrees } from "pdf-lib";
 import {
     Upload,
     Download,
@@ -100,6 +99,8 @@ export default function ToolClient() {
     };
 
     const processAndDownload = async () => {
+        // Loaded only when needed, so the page itself stays small and fast
+        const { PDFDocument, degrees } = await import("pdf-lib");
         if (!file) return;
         setLoading(true);
         try {

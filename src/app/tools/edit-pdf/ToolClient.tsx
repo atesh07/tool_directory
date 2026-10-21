@@ -1,8 +1,7 @@
 "use client";
 
 import { Fragment, useState, useRef, useEffect } from "react";
-import { PDFDocument, StandardFonts, rgb, setCharacterSpacing } from "pdf-lib";
-import fontkit from "@pdf-lib/fontkit";
+import type { PDFDocument as PDFDocumentType } from "pdf-lib";
 import { loadWebFace, type WebFace } from "./webFonts";
 import { RefreshCcw, Download, Trash2, Lock, Bold, Italic } from "lucide-react";
 
@@ -233,6 +232,9 @@ export default function ToolClient() {
 
         setLoading(true);
         setFile(selectedFile);
+        // Start downloading the save-time libraries while the user reads and edits
+        void import("pdf-lib");
+        void import("@pdf-lib/fontkit");
 
         try {
             const data = new Uint8Array(await selectedFile.arrayBuffer());
@@ -536,10 +538,13 @@ export default function ToolClient() {
         if (!file) return;
         setLoading(true);
         try {
+            // Loaded only when saving, so the page itself stays small and fast
+            const { PDFDocument, StandardFonts, rgb, setCharacterSpacing } = await import("pdf-lib");
+            const fontkit = (await import("@pdf-lib/fontkit")).default;
             const sourceBytes = await file.arrayBuffer();
             // Protected PDFs can be read for display but can't be edited in place; they are rebuilt from page images instead
             let flat = false;
-            let pdfDoc: PDFDocument;
+            let pdfDoc: PDFDocumentType;
             try {
                 pdfDoc = await PDFDocument.load(sourceBytes, { updateMetadata: false });
             } catch (loadErr) {

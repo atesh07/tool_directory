@@ -1,20 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Twitter,
-  Mail,
-  Heart,
-  FileText,
-  Image as ImageIcon,
-  FilePlus,
-  Linkedin,
-  Layers,
-  Scissors,
-  Shrink,
-  ArrowRight,
-  FileSpreadsheet
-} from "lucide-react";
+import { Twitter, Mail, Heart, Linkedin, ArrowRight } from "lucide-react";
+import { SITE, TOOLS, toolPath } from "@/data/tools";
 
 const Footer = () => {
   return (
@@ -47,17 +35,13 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* More Tools */}
           <div>
             <h3 className="font-bold text-slate-900 mb-5 tracking-wide">Quick Links</h3>
             <div className="flex flex-col gap-3 text-slate-500">
               {[
-                { name: "Image to PDF", href: "/tools/image-to-pdf" },
-                { name: "PDF to Image", href: "/tools/pdf-to-image" },
-                { name: "Word to PDF", href: "/tools/word-to-pdf" },
-                { name: "Excel to PDF", href: "/tools/excel-to-pdf" },
-                { name: "PowerPoint to PDF", href: "/tools/ppt-to-pdf" },
-                { name: "Protect PDF", href: "/tools/protect-pdf" },
+                ...TOOLS.slice(4).map((t) => ({ name: t.name, href: toolPath(t.slug) })),
+                { name: "All tools", href: "/tools" },
               ].map((link, idx) => (
                 <Link 
                   key={idx} 
@@ -75,12 +59,7 @@ const Footer = () => {
             <h3 className="font-bold text-slate-900 mb-5 tracking-wide">Popular Tools</h3>
             <div className="flex flex-col gap-3 text-slate-500">
               {[
-                { name: "Merge PDF", icon: Layers, href: "/tools/merge-pdf" },
-                { name: "Split PDF", icon: Scissors, href: "/tools/split-pdf" },
-                { name: "Compress PDF", icon: Shrink, href: "/tools/compress-pdf" },
-                { name: "PDF to Word", icon: FileText, href: "/tools/pdf-to-word" },
-                { name: "Delete PDF Pages", icon: FilePlus, href: "/tools/delete-pdf" },
-                { name: "Compress Image", icon: ImageIcon, href: "/tools/compress-image" },
+                ...TOOLS.slice(0, 4).map((t) => ({ name: t.name, icon: t.icon, href: toolPath(t.slug) })),
               ].map((tool, idx) => {
                 const Icon = tool.icon;
                 return (
@@ -104,10 +83,10 @@ const Footer = () => {
               Have suggestions or need help with a tool? We&apos;re here for you.
             </p>
             <a 
-              href="mailto:support@toolstree.com" 
+              href={`mailto:${SITE.email}`} 
               className="inline-flex items-center gap-2 font-medium text-[#0066cc] hover:text-[#005bb5] transition-colors"
             >
-              support@toolstree.com
+              {SITE.email}
               <ArrowRight size={16} />
             </a>
           </div>
@@ -119,6 +98,8 @@ const Footer = () => {
           <p>© {new Date().getFullYear()} ToolsTree. All rights reserved.</p>
 
           <div className="flex gap-6">
+            <Link href="/about" className="hover:text-[#0066cc] transition-colors">About</Link>
+            <Link href="/contact" className="hover:text-[#0066cc] transition-colors">Contact</Link>
             <Link href="/privacy" className="hover:text-[#0066cc] transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-[#0066cc] transition-colors">Terms of Service</Link>
           </div>

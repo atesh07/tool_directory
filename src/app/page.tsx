@@ -1,16 +1,20 @@
-import React from 'react'
-import HeroSection from './Sections/HeroSection/HeroSection'
-import PopularTools from './Sections/PopularTools/PopularTools'
-import Tutorial from './Sections/Tutorial/Tutorial'
+import type { Metadata } from "next";
+import HeroSection from "./Sections/HeroSection/HeroSection";
+import PopularTools from "./Sections/PopularTools/PopularTools";
+import Tutorial from "./Sections/Tutorial/Tutorial";
+import Faq from "./Sections/Faq/Faq";
 
-const page = () => {
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
+export default function Page() {
   return (
-    <div>
-        <HeroSection/>
-        <PopularTools/>
-        <Tutorial/>
-    </div>
-  )
+    <main>
+      <HeroSection />
+      <PopularTools />
+      <Tutorial />
+      <Faq />
+    </main>
+  );
 }
-
-export default page

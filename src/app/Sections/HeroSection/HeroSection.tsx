@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 const HeroSection = () => {
   return (
@@ -39,16 +40,16 @@ const HeroSection = () => {
 
           {/* Premium CTA Buttons */}
           <div className="mt-10 flex flex-col sm:flex-row gap-4">
-            <button className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#0066cc] text-white font-medium rounded-2xl shadow-[0_8px_30px_rgb(0,102,204,0.12)] hover:bg-[#005bb5] hover:shadow-[0_8px_30px_rgb(0,102,204,0.2)] hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#0066cc] focus:ring-offset-2 active:scale-[0.98]">
+            <Link href="#tools" className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#0066cc] text-white font-medium rounded-2xl shadow-[0_8px_30px_rgb(0,102,204,0.12)] hover:bg-[#005bb5] hover:shadow-[0_8px_30px_rgb(0,102,204,0.2)] hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#0066cc] focus:ring-offset-2 active:scale-[0.98]">
               Explore Tools
               <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
-            </button>
+            </Link>
 
-            <button className="px-8 py-4 bg-white/50 backdrop-blur-sm border border-zinc-200/80 text-zinc-700 font-medium rounded-2xl shadow-sm hover:border-zinc-300 hover:bg-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-zinc-200 focus:ring-offset-2 active:scale-[0.98]">
+            <Link href="#how-it-works" className="px-8 py-4 bg-white/50 backdrop-blur-sm border border-zinc-200/80 text-zinc-700 font-medium rounded-2xl shadow-sm hover:border-zinc-300 hover:bg-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-zinc-200 focus:ring-offset-2 active:scale-[0.98]">
               Learn  More
-            </button>
+            </Link>
           </div>
         </div>
 

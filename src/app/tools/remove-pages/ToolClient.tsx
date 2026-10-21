@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { PDFDocument } from "pdf-lib";
 import {
     Download,
     Trash2,
@@ -84,6 +83,8 @@ export default function ToolClient() {
     };
 
     const processAndDownload = async () => {
+        // Loaded only when needed, so the page itself stays small and fast
+        const { PDFDocument } = await import("pdf-lib");
         if (!file) return;
         
         if (deletedPages.size === images.length) {

@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { PDFDocument } from "pdf-lib";
-import * as pdfjs from "pdfjs-dist";
 import { 
   Upload, 
   X, 
@@ -15,8 +13,15 @@ import {
   Lock
 } from "lucide-react";
 
-// PDF.js Worker Configuration
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+// PDF.js is only needed once a file is added, and its worker is served from our own site (not a third-party CDN)
+let pdfjsPromise: Promise<any> | null = null;
+const loadPdfJs = () =>
+  (pdfjsPromise ||= (async () => {
+    const lib = await import("pdfjs-dist/build/pdf");
+    const worker = await import("pdfjs-dist/build/pdf.worker.min.js");
+    lib.GlobalWorkerOptions.workerSrc = worker.default;
+    return lib;
+  })());
 
 interface PDFItem {
   id: string;
@@ -36,6 +41,7 @@ export default function ToolClient() {
   const generateThumbnail = async (file: File): Promise<string> => {
     try {
       const data = await file.arrayBuffer();
+      const pdfjs = await loadPdfJs();
       const pdf = await pdfjs.getDocument({ data }).promise;
       const page = await pdf.getPage(1);
       const viewport = page.getViewport({ scale: 0.4 });
@@ -101,6 +107,8 @@ export default function ToolClient() {
   const clearAll = () => setItems([]);
 
   const mergePdfs = async () => {
+    // Loaded only when needed, so the page itself stays small and fast
+    const { PDFDocument } = await import("pdf-lib");
     if (items.length < 2) return;
     setLoading(true);
     try {

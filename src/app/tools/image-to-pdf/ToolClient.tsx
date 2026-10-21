@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import jsPDF from "jspdf";
 import { 
   Upload, 
   X, 
@@ -85,6 +84,8 @@ export default function ToolClient() {
 
   // --- PDF Generation ---
   const convertToPdf = async () => {
+    // Loaded only when needed, so the page itself stays small and fast
+    const jsPDF = (await import("jspdf")).default;
     if (images.length === 0) {
       alert("File is empty! Please upload images first.");
       return;

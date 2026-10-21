@@ -2,14 +2,20 @@
 
 import React, { useState } from 'react';
 // 1. Import the browser-specific build directly
-import * as mammoth from 'mammoth/mammoth.browser.min.js';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 
-export default function ToolClint() {
+export default function ToolClient() {
   const [loading, setLoading] = useState(false);
 
   const convertToPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Loaded only when needed, so the page itself stays small and fast
+    const [mammothModule, html2canvasModule, jspdfModule] = await Promise.all([
+      import('mammoth/mammoth.browser.min.js'),
+      import('html2canvas'),
+      import('jspdf'),
+    ]);
+    const mammoth: any = (mammothModule as any).convertToHtml ? mammothModule : (mammothModule as any).default;
+    const html2canvas = html2canvasModule.default;
+    const { jsPDF } = jspdfModule;
     const file = e.target.files?.[0];
     if (!file) return;
 

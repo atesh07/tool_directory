@@ -2,37 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  FileImage,
-  FileText,
-  FilePlus,
-  Scissors,
-  Combine,
-  RotateCw,
-  Pencil,
-  Menu,
-  X,
-  ChevronDown,
-} from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
+import { TOOLS, toolPath } from "@/data/tools";
 
 const Header = () => {
   const [showTools, setShowTools] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
 
-  const tools = [
-    { name: "Image to PDF", path: "/tools/image-to-pdf", icon: FileImage },
-    { name: "PDF to Image", path: "/tools/pdf-to-image", icon: FileImage },
-    { name: "Compress PDF", path: "/tools/compress-pdf", icon: FileText },
-    { name: "Merge PDF", path: "/tools/merge-pdf", icon: Combine },
-    { name: "Split PDF", path: "/tools/split-pdf", icon: Scissors },
-    { name: "JPG to PDF", path: "/tools/jpg-to-pdf", icon: FileImage },
-    { name: "Remove Pages", path: "/tools/remove-pages", icon: FilePlus },
-    { name: "Word to PDF", path: "/tools/word-to-pdf", icon: FileText },
-    { name: "PDF to Word", path: "/tools/pdf-to-word", icon: FileText },
-    { name: "Rotate PDF", path: "/tools/rotate-pdf", icon: RotateCw },
-    { name: "Edit PDF", path: "/tools/edit-pdf", icon: Pencil },
-  ];
+  // Only tools that really exist, so no menu item leads to a 404
+  const tools = TOOLS.map((t) => ({ name: t.name, path: toolPath(t.slug), icon: t.icon }));
 
   // Helper to close mobile menus after navigation
   const closeMobileMenu = () => {
@@ -86,6 +65,9 @@ const Header = () => {
             </div>
 
             {/* Desktop Quick Links */}
+            <Link href="/tools/edit-pdf" className="hover:text-[#0066cc] font-medium transition text-sm lg:text-base">
+              Edit PDF
+            </Link>
             <Link href="/tools/image-to-pdf" className="hover:text-[#0066cc] font-medium transition text-sm lg:text-base">
               Image to PDF
             </Link>

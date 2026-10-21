@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { PDFDocument } from "pdf-lib";
-import JSZip from "jszip";
 import {
     Download,
     Trash2,
@@ -144,6 +142,8 @@ export default function ToolClient() {
     };
 
     const processAndDownload = async () => {
+        // Loaded only when needed, so the page itself stays small and fast
+        const [{ PDFDocument }, { default: JSZip }] = await Promise.all([import("pdf-lib"), import("jszip")]);
         if (!file || error || groups.length === 0) return;
 
         setLoading(true);

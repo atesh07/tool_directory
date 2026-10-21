@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
 import { Upload, PlayCircle, Download } from "lucide-react";
 
 const steps = [
@@ -26,23 +23,18 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="relative w-full bg-white border-t py-24 z-0">
+    <section id="how-it-works" className="relative w-full bg-white border-t py-24 z-0 scroll-mt-16">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         
         {/* HOW IT WORKS HEADER */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16 animate-fade-up">
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
             How to Convert Files for Free
           </h2>
           <p className="text-slate-600 mt-4 text-lg">
             Three simple steps to get your perfectly formatted document.
           </p>
-        </motion.div>
+        </div>
 
         {/* STEPS SECTION */}
         <div className="relative max-w-5xl mx-auto">
@@ -54,13 +46,10 @@ export default function HowItWorks() {
               const Icon = step.icon;
 
               return (
-                <motion.div
+                <div
                   key={index}
-                  initial={{ opacity: 0, scale: 0.95, y: 30 }}
-                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.15 }}
-                  viewport={{ once: true }}
-                  className="flex flex-col items-center text-center group"
+                  style={{ animationDelay: `${index * 0.15}s` }}
+                  className="flex flex-col items-center text-center group animate-fade-up"
                 >
                   {/* Number & Icon Wrapper */}
                   <div className="relative mb-6">
@@ -79,7 +68,7 @@ export default function HowItWorks() {
                   <p className="text-slate-500 leading-relaxed max-w-xs mx-auto">
                     {step.desc}
                   </p>
-                </motion.div>
+                </div>
               );
             })}
           </div>
