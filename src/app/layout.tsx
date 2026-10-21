@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
   // Paste the code from Google Search Console / Bing Webmaster into the environment variables
   verification: {
-    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION,
+    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION || "T76H87AdQi0hd6m_bVnB5npwgY-qN-Ccna_BG68FFMw",
     other: process.env.NEXT_PUBLIC_BING_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_VERIFICATION } : undefined,
   },
 };
