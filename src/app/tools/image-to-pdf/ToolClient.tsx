@@ -1,5 +1,7 @@
 "use client";
 
+import { beginWork, endWork } from "@/lib/crashGuard";
+
 import ErrorNotice from "@/components/tools/ErrorNotice";
 import UploadZone from "@/components/tools/UploadZone";
 import { checkImageFile } from "@/lib/pdfFiles";
@@ -114,6 +116,7 @@ export default function ToolClient() {
     }
     setError(null);
     setLoading(true);
+    beginWork();
     let current = "";
     try {
       // Loaded only when needed, so the page itself stays small and fast
@@ -173,6 +176,7 @@ export default function ToolClient() {
       );
     } finally {
       setLoading(false);
+      endWork();
       setProgress("");
     }
   };

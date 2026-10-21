@@ -26,14 +26,14 @@ function Card({ tool }: { tool: Item }) {
       <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#0066cc]/10 text-[#0066cc] mb-5 group-hover:bg-[#0066cc] group-hover:text-white transition-colors duration-300">
         <Icon size={24} aria-hidden="true" />
       </div>
-      <h4 className="font-semibold text-slate-900 mb-2 group-hover:text-[#0066cc] transition-colors flex items-center gap-2">
+      <p className="font-semibold text-slate-900 mb-2 group-hover:text-[#0066cc] transition-colors flex items-center gap-2">
         {tool.title}
         {!tool.href && (
           <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
             Soon
           </span>
         )}
-      </h4>
+      </p>
       <p className="text-sm text-slate-600 leading-relaxed">{tool.description}</p>
     </div>
   );

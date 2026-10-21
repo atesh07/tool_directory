@@ -21,6 +21,12 @@ export async function checkPdfFile(file: File): Promise<string | null> {
 export function pdfErrorMessage(err: unknown): string {
   const name = (err as { name?: string } | null)?.name ?? "";
   const text = err instanceof Error ? err.message : String(err ?? "");
+  if (/out of memory|allocation failed|invalid array length|array buffer allocation|maximum call stack|canvas.*(size|memory)|ran out of memory/i.test(text) || name === "RangeError") {
+    return "Your device ran out of memory while working on this file. Try a smaller file, split the PDF into parts first, close other tabs, or use a computer.";
+  }
+  if (name === "ChunkLoadError" || /loading chunk|dynamically imported module|importing a module script|failed to fetch|networkerror/i.test(text)) {
+    return "Part of the tool could not be loaded. Check your internet connection and try again.";
+  }
   if (name === "PasswordException" || /password|encrypted/i.test(text)) {
     return "This PDF is password protected. Remove the password first, then try again.";
   }

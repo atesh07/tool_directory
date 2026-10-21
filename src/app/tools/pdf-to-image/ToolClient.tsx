@@ -1,120 +1,106 @@
 "use client";
 
-import ErrorNotice from "@/components/tools/ErrorNotice";
-import UploadZone from "@/components/tools/UploadZone";
-import { downloadBlob } from "@/lib/download";
-import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
+import { beginWork, endWork } from "@/lib/crashGuard";
 
-import { useState, useRef, useEffect } from "react";
-import { 
-  Upload, 
-  FileImage, 
-  Download, 
-  RefreshCcw, 
-  CheckCircle2, 
-  Trash2, 
-  MousePointer2,
-  Lock 
-} from "lucide-react";
+import ErrorNotice from "@/components/tools/ErrorNotice";
+import PageThumb from "@/components/tools/PageThumb";
+import UploadZone from "@/components/tools/UploadZone";
+import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
+import { downloadBlob } from "@/lib/download";
+import { openPdf, prefetchPdfJs, renderPageToBlob } from "@/lib/pdfjs";
+
+import { useRef, useState } from "react";
+import { Download, CheckCircle2, Trash2 } from "lucide-react";
+
+// A ZIP holds at most this many pages, so a long PDF never has to sit in memory all at once
+const ZIP_PAGES = 100;
 
 export default function ToolClient() {
-  const [images, setImages] = useState<string[]>([]);
+  const [pageCount, setPageCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [sourceName, setSourceName] = useState("document");
-  const [zipping, setZipping] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [busy, setBusy] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pdfjsRef = useRef<any>(null);
-
-  useEffect(() => {
-    const loadPdfJs = async () => {
-      const pdfjsLib = await import("pdfjs-dist/build/pdf");
-      const worker = await import("pdfjs-dist/build/pdf.worker.min.js");
-      pdfjsLib.GlobalWorkerOptions.workerSrc = worker.default;
-      pdfjsRef.current = pdfjsLib;
-    };
-    loadPdfJs();
-  }, []);
+  // The open PDF. Page previews and images are drawn from it only when needed.
+  const pdfRef = useRef<any>(null);
 
   const handleFile = async (file: File) => {
     setError(null);
-    // The PDF reader loads in the background; wait for it instead of ignoring the file
-    let waited = 0;
-    while (!pdfjsRef.current && waited < 100) {
-      await new Promise((r) => setTimeout(r, 100));
-      waited++;
-    }
-    if (!pdfjsRef.current) {
-      setError("The PDF reader is still loading. Please try again in a moment.");
-      return;
-    }
+    setDone(null);
     const problem = await checkPdfFile(file);
     if (problem) {
       setError(problem);
       return;
     }
-
-    setDone(null);
     setSourceName(file.name.replace(/\.pdf$/i, "") || "document");
     setLoading(true);
-    setImages([]);
-
-    const reader = new FileReader();
-    reader.onload = async function () {
-      try {
-        const typedarray = new Uint8Array(this.result as ArrayBuffer);
-        const pdf = await pdfjsRef.current.getDocument({ data: typedarray }).promise;
-        const imgs: string[] = [];
-        
-        setProgress({ current: 0, total: pdf.numPages });
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          // 2x for sharp images, but never so large that the browser refuses to draw the page
-          const base = page.getViewport({ scale: 1 });
-          const scale = Math.min(2, 4096 / Math.max(base.width, base.height));
-          const viewport = page.getViewport({ scale });
-          const canvas = document.createElement("canvas");
-          const context = canvas.getContext("2d")!;
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-
-          await page.render({ canvasContext: context, viewport }).promise;
-          imgs.push(canvas.toDataURL("image/jpeg", 0.9));
-          setProgress(prev => ({ ...prev, current: i }));
-        }
-
-        setImages(imgs);
-      } catch (err) {
-        setError(pdfErrorMessage(err));
-      } finally {
-        setLoading(false);
-      }
-    };
-    reader.onerror = () => {
-      setError("The file could not be read. Please choose it again.");
+    beginWork();
+    try {
+      const pdf = await openPdf(file);
+      pdfRef.current?.destroy?.();
+      pdfRef.current = pdf;
+      setPageCount(pdf.numPages);
+    } catch (err) {
+      setError(pdfErrorMessage(err));
+    } finally {
       setLoading(false);
-    };
-    reader.readAsArrayBuffer(file);
+      endWork();
+    }
   };
 
+  // Full-size picture of one page: up to 2x, but never so large that the browser refuses to draw it
+  const pageImage = (n: number) => renderPageToBlob(pdfRef.current, n, { scale: 2, maxSide: 4096, quality: 0.9 });
 
+  const savePage = async (n: number) => {
+    setBusy(`page-${n}`);
+    setError(null);
+    beginWork();
+    try {
+      downloadBlob(await pageImage(n), `${sourceName}_page-${n}.jpg`);
+    } catch (err) {
+      setError(pdfErrorMessage(err));
+    } finally {
+      setBusy(null);
+      endWork();
+    }
+  };
 
-  const downloadAll = async () => {
-    setZipping(true);
+  const saveRange = async (from: number, to: number) => {
+    setError(null);
+    setDone(null);
+    beginWork();
     try {
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
-      images.forEach((img, i) => zip.file(`${sourceName}_page-${i + 1}.jpg`, img.split(",")[1], { base64: true }));
-      downloadBlob(await zip.generateAsync({ type: "blob" }), `${sourceName}_images.zip`);
-      setDone(`${sourceName}_images.zip was downloaded with ${images.length} image${images.length === 1 ? "" : "s"}. Check your Downloads folder.`);
-    } catch {
-      setError("The images could not be zipped. Please save the pages one by one instead.");
+      for (let n = from; n <= to; n++) {
+        setBusy(`Converting page ${n} of ${pageCount}...`);
+        zip.file(`${sourceName}_page-${n}.jpg`, await pageImage(n));
+      }
+      setBusy("Packing the ZIP file...");
+      // JPG pictures are already compressed, so they are stored as they are: faster and lighter on memory
+      const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+      const suffix = pageCount > ZIP_PAGES ? `_pages-${from}-${to}` : "";
+      downloadBlob(blob, `${sourceName}_images${suffix}.zip`);
+      setDone(`${sourceName}_images${suffix}.zip was downloaded with ${to - from + 1} image${to === from ? "" : "s"}. Check your Downloads folder.`);
+    } catch (err) {
+      setError(
+        /memory|allocation|canvas|range/i.test(String((err as Error)?.message ?? err))
+          ? "Your device ran out of memory while converting. Try again with a smaller range, or save pages one by one."
+          : pdfErrorMessage(err)
+      );
     } finally {
-      setZipping(false);
+      setBusy(null);
+      endWork();
     }
+  };
+
+  const reset = () => {
+    pdfRef.current?.destroy?.();
+    pdfRef.current = null;
+    setPageCount(0);
+    setDone(null);
   };
 
   const retryPick = () => {
@@ -122,11 +108,13 @@ export default function ToolClient() {
     fileInputRef.current?.click();
   };
 
+  const chunks = Array.from({ length: Math.ceil(pageCount / ZIP_PAGES) }, (_, i) => [i * ZIP_PAGES + 1, Math.min(pageCount, (i + 1) * ZIP_PAGES)] as const);
+
   return (
     <div className="space-y-8">
       <ErrorNotice message={error} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setError(null)} />
       <ErrorNotice message={done} tone="success" onDismiss={() => setDone(null)} />
-      {images.length === 0 ? (
+      {pageCount === 0 ? (
         <div className="max-w-3xl mx-auto">
           <UploadZone
             inputRef={fileInputRef}
@@ -135,59 +123,82 @@ export default function ToolClient() {
             buttonLabel="Select PDF"
             hint="PDF files only, up to 150 MB. Every page becomes a JPG image."
             onFiles={(files) => handleFile(files[0])}
+            onIntent={prefetchPdfJs}
             loading={loading}
-            loadingText={progress.total ? `Converting page ${Math.min(progress.current + 1, progress.total)} of ${progress.total}...` : "Reading PDF..."}
+            loadingText="Opening PDF..."
           />
         </div>
       ) : (
         <div className="space-y-6">
           {/* Action Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-center bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-green-500 p-1.5 rounded-full text-white">
-                <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+          <div className="flex flex-col gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-500 p-1.5 rounded-full text-white">
+                  <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                </div>
+                <p className="font-bold text-slate-700">{pageCount} page{pageCount === 1 ? "" : "s"} ready</p>
               </div>
-              <p className="font-bold text-slate-700">{images.length} page{images.length === 1 ? "" : "s"} ready</p>
-            </div>
-            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
               <button
-                onClick={downloadAll}
-                disabled={zipping}
-                aria-busy={zipping}
-                className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#0062cc] px-5 font-bold text-white hover:bg-[#0052ad] disabled:cursor-not-allowed disabled:bg-slate-300 sm:flex-none"
-              >
-                <Download className="w-5 h-5" aria-hidden="true" />
-                {zipping ? "Zipping..." : images.length === 1 ? "Download image" : "Download all (ZIP)"}
-              </button>
-              <button
-                onClick={() => {
-                  setImages([]);
-                  setDone(null);
-                }}
-                disabled={zipping}
+                onClick={reset}
+                disabled={!!busy}
                 className="flex min-h-[48px] items-center gap-2 rounded-xl px-4 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
               >
                 <Trash2 className="w-4 h-4" aria-hidden="true" /> Start new
               </button>
             </div>
+
+            <div className="flex flex-wrap gap-2" aria-busy={!!busy}>
+              {chunks.map(([from, to]) => (
+                <button
+                  key={from}
+                  onClick={() => (from === to && pageCount === 1 ? savePage(1) : saveRange(from, to))}
+                  disabled={!!busy}
+                  className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#0062cc] px-5 font-bold text-white hover:bg-[#0052ad] disabled:cursor-not-allowed disabled:bg-slate-300 sm:flex-none"
+                >
+                  <Download className="w-5 h-5" aria-hidden="true" />
+                  {pageCount === 1
+                    ? "Download image"
+                    : chunks.length === 1
+                      ? "Download all (ZIP)"
+                      : `Pages ${from} to ${to} (ZIP)`}
+                </button>
+              ))}
+            </div>
+            {busy && !busy.startsWith("page-") && (
+              <p role="status" className="text-sm font-medium text-slate-700">
+                {busy}
+              </p>
+            )}
+            {chunks.length > 1 && (
+              <p className="text-sm text-slate-600">Long PDFs are packed in ZIP files of {ZIP_PAGES} pages, so your device does not run out of memory.</p>
+            )}
           </div>
 
-          {/* Image Grid */}
+          {/* Previews are drawn only when they scroll into view */}
           <ol className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-            {images.map((img, index) => (
-              <li key={index} className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <div className="relative aspect-[3/4.2] overflow-hidden bg-slate-100">
-                  <img src={img} alt={`Page ${index + 1} as an image`} className="h-full w-full object-cover" />
-                  <span className="absolute left-3 top-3 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white">Page {index + 1}</span>
+            {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
+              <li key={n} className="[content-visibility:auto] [contain-intrinsic-size:auto_260px] flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="relative flex aspect-[3/4.2] items-center justify-center overflow-hidden bg-slate-100">
+                  <PageThumb
+                    pdf={pdfRef.current}
+                    pageNumber={n}
+                    scale={0.6}
+                    alt={`Page ${n} as an image`}
+                    className="flex h-full w-full items-center justify-center"
+                    imgClassName="h-full w-full object-cover"
+                    placeholderClassName="h-full w-full bg-slate-200 animate-pulse"
+                  />
+                  <span className="absolute left-3 top-3 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white">Page {n}</span>
                 </div>
-                <a
-                  href={img}
-                  download={`${sourceName}_page-${index + 1}.jpg`}
-                  aria-label={`Save page ${index + 1} as a JPG image`}
-                  className="flex min-h-[48px] items-center justify-center gap-2 border-t border-slate-200 text-sm font-bold text-[#0062cc] hover:bg-blue-50"
+                <button
+                  onClick={() => savePage(n)}
+                  disabled={!!busy}
+                  aria-label={`Save page ${n} as a JPG image`}
+                  className="flex min-h-[48px] items-center justify-center gap-2 border-t border-slate-200 text-sm font-bold text-[#0062cc] hover:bg-blue-50 disabled:opacity-50"
                 >
-                  <Download className="w-4 h-4" aria-hidden="true" /> Save JPG
-                </a>
+                  <Download className="w-4 h-4" aria-hidden="true" /> {busy === `page-${n}` ? "Preparing..." : "Save JPG"}
+                </button>
               </li>
             ))}
           </ol>

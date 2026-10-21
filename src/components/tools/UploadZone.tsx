@@ -21,6 +21,8 @@ type Props = {
   noun?: string;
   /** Smaller version used once files are already added, so the list stays near the top on phones */
   compact?: boolean;
+  /** Called when the visitor points at, touches or focuses the area, a good moment to start loading what the tool needs */
+  onIntent?: () => void;
 };
 
 /**
@@ -39,6 +41,7 @@ export default function UploadZone({
   disabled,
   noun = "file",
   compact,
+  onIntent,
 }: Props) {
   const ownRef = useRef<HTMLInputElement>(null);
   const ref = inputRef ?? ownRef;
@@ -55,6 +58,9 @@ export default function UploadZone({
         e.preventDefault();
         if (!blocked) setDragging(true);
       }}
+      onPointerEnter={onIntent}
+      onTouchStart={onIntent}
+      onFocusCapture={onIntent}
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => {
         e.preventDefault();

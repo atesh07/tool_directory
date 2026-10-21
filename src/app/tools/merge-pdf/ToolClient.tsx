@@ -1,5 +1,7 @@
 "use client";
 
+import { beginWork, endWork } from "@/lib/crashGuard";
+
 import ErrorNotice from "@/components/tools/ErrorNotice";
 import UploadZone from "@/components/tools/UploadZone";
 import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
@@ -73,6 +75,7 @@ export default function ToolClient() {
     setError(null);
     setDone(null);
     setLoading(true);
+    beginWork();
 
     // Check every file first and say exactly which ones were left out and why
     const validFiles: File[] = [];
@@ -94,6 +97,7 @@ export default function ToolClient() {
 
     setItems((prev) => [...prev, ...newItems]);
     setLoading(false);
+    endWork();
     // Allow choosing the same file again after it was removed
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -142,13 +146,14 @@ export default function ToolClient() {
   };
 
   const mergePdfs = async () => {
-    // Loaded only when needed, so the page itself stays small and fast
-    const { PDFDocument } = await import("pdf-lib");
     if (items.length < 2) return;
     setError(null);
     setLoading(true);
+    beginWork();
     let current = "";
     try {
+      // Loaded only when needed, so the page itself stays small and fast
+      const { PDFDocument } = await import("pdf-lib");
       const mergedPdf = await PDFDocument.create();
       for (const item of items) {
         current = item.file.name;
@@ -169,6 +174,7 @@ export default function ToolClient() {
       setError(current ? `"${current}" could not be merged. ${pdfErrorMessage(err)}` : `Could not merge these files. ${pdfErrorMessage(err)}`);
     } finally {
       setLoading(false);
+      endWork();
     }
   };
 

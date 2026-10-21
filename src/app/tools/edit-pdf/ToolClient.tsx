@@ -1,11 +1,14 @@
 "use client";
 
-import { Fragment, useState, useRef, useEffect } from "react";
+import { beginWork, endWork } from "@/lib/crashGuard";
+
+import { Fragment, memo, useCallback, useState, useRef, useEffect } from "react";
 import type { PDFDocument as PDFDocumentType } from "pdf-lib";
 import ErrorNotice from "@/components/tools/ErrorNotice";
 import UploadZone from "@/components/tools/UploadZone";
 import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
 import { downloadBlob } from "@/lib/download";
+import { loadPdfJs, prefetchPdfJs } from "@/lib/pdfjs";
 import { loadWebFace, type WebFace } from "./webFonts";
 import { RefreshCcw, Download, Trash2, Bold, Italic, ZoomIn, ZoomOut } from "lucide-react";
 
@@ -200,6 +203,124 @@ function sampleColors(ctx: CanvasRenderingContext2D, x: number, y: number, w: nu
     return { bg, color };
 }
 
+// Width of a text in a given font, measured with one shared canvas
+let measureCtx: CanvasRenderingContext2D | null = null;
+function measureText(text: string, fontSize: number, family: string) {
+    measureCtx ||= document.createElement("canvas").getContext("2d")!;
+    measureCtx.font = `${fontSize}px ${family}`;
+    return measureCtx.measureText(text).width;
+}
+
+// Text before the first change keeps the PDF's own pixels; only the rest of the run is rewritten.
+// Returns how many characters that untouched start has and how wide it is on screen.
+function layoutFor(it: TextItem, convertAll: boolean) {
+    if (convertAll || it.styleChanged || it.fromSplit) return { prefixLen: 0, prefixPx: 0 };
+    const a = it.original;
+    const b = it.text;
+    let n = 0;
+    while (n < a.length && n < b.length && a[n] === b[n]) n++;
+    if (n === 0) return { prefixLen: 0, prefixPx: 0 };
+    const full = measureText(a, it.fontSize, it.origStack);
+    const k = full > 0 ? (it.coverWidth * SCALE) / full : 1;
+    return { prefixLen: n, prefixPx: measureText(a.slice(0, n), it.fontSize, it.origStack) * k };
+}
+
+type PageItemsProps = {
+    pg: PageData;
+    pageIdx: number;
+    convertAll: boolean;
+    onFocusItem: (page: number, id: number) => void;
+    onBlurItem: () => void;
+    onInputItem: (page: number, id: number, text: string) => void;
+    onToggleStyle: (kind: "bold" | "italic") => void;
+};
+
+// One page picture plus its text layers. Memoised: typing on one page redraws only that page, and zooming redraws none.
+const PageItems = memo(function PageItems({ pg, pageIdx, convertAll, onFocusItem, onBlurItem, onInputItem, onToggleStyle }: PageItemsProps) {
+    return (
+        <>
+              <img src={pg.image} alt={`Page ${pageIdx + 1} of the PDF`} width={pg.width} height={pg.height} draggable={false} className="absolute inset-0 select-none" />
+
+              {pg.items.filter((it) => !it.locked).map((it) => {
+                  const key = `${pageIdx}-${it.id}`;
+                  const touched = convertAll || isEdited(it);
+                  const lay = touched ? layoutFor(it, convertAll) : { prefixLen: 0, prefixPx: 0 };
+                  const decoration = it.underline
+                      ? { textDecorationLine: "underline" as const, textDecorationColor: css(it.underline.color), textDecorationThickness: `${it.underline.thick}px` }
+                      : {};
+                  return (
+                      <Fragment key={key}>
+                      {touched && it.coverWidth > 0 && (
+                          // Hides only the part of the original that is being rewritten; the untouched start stays as the PDF drew it
+                          <div
+                              className="absolute pointer-events-none"
+                              style={{ left: it.coverLeft + lay.prefixPx - 1, top: it.top, width: it.coverWidth * SCALE - lay.prefixPx + 2, height: it.wipeHeight, backgroundColor: css(it.bg) }}
+                          />
+                      )}
+                      {touched && (
+                          <div
+                              className="absolute pointer-events-none whitespace-pre"
+                              style={{
+                                  left: it.left + lay.prefixPx,
+                                  top: it.top,
+                                  height: it.wipeHeight,
+                                  lineHeight: `${it.boxHeight}px`,
+                                  fontSize: it.fontSize,
+                                  fontFamily: it.cssOverride ?? it.cssFont,
+                                  // Every face in the stack is already bold/italic where needed; styling again would double it
+                                  fontWeight: 400,
+                                  fontStyle: "normal",
+                                  color: css(it.color),
+                                  letterSpacing: it.tracking || undefined,
+                                  ...decoration,
+                              }}
+                          >
+                              {it.text.slice(lay.prefixLen)}
+                          </div>
+                      )}
+                      <div
+                          contentEditable
+                          role="textbox"
+                          aria-label={`Edit text on page ${pageIdx + 1}: ${it.original.slice(0, 50)}`}
+                          data-item={`${pageIdx}:${it.id}`}
+                          suppressContentEditableWarning
+                          spellCheck={false}
+                          onFocus={() => onFocusItem(pageIdx, it.id)}
+                          onKeyDown={(e) => {
+                              if ((e.metaKey || e.ctrlKey) && (e.key === "b" || e.key === "i")) {
+                                  e.preventDefault();
+                                  onToggleStyle(e.key === "b" ? "bold" : "italic");
+                              }
+                          }}
+                          onInput={(e) => onInputItem(pageIdx, it.id, e.currentTarget.textContent ?? "")}
+                          onBlur={onBlurItem}
+                          className="absolute outline-none whitespace-pre cursor-text hover:outline hover:outline-1 hover:outline-[#0062cc]/60 focus:outline focus:outline-2 focus:outline-[#0062cc]"
+                          style={{
+                              left: it.left,
+                              top: it.top,
+                              minWidth: it.boxWidth,
+                              height: it.wipeHeight,
+                              lineHeight: `${it.boxHeight}px`,
+                              fontSize: it.fontSize,
+                              // The text itself is drawn by the layers above; this layer only takes typing, so its caret follows the PDF's own font
+                              fontFamily: convertAll || it.styleChanged ? it.cssOverride ?? it.cssFont : it.origStack,
+                              letterSpacing: convertAll || it.styleChanged ? it.tracking || undefined : undefined,
+                              fontWeight: 400,
+                              fontStyle: "normal",
+                              color: "transparent",
+                              caretColor: css(it.color),
+                              backgroundColor: "transparent",
+                          }}
+                      >
+                          {it.domText}
+                      </div>
+                      </Fragment>
+                  );
+              })}
+        </>
+    );
+});
+
 export default function ToolClient() {
     const [file, setFile] = useState<File | null>(null);
     const [pages, setPages] = useState<PageData[]>([]);
@@ -218,22 +339,14 @@ export default function ToolClient() {
     const [avail, setAvail] = useState(0);
     const [zoom, setZoom] = useState(1);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const pdfjsRef = useRef<any>(null);
+    // Object URLs of the page pictures, released when the file is replaced
+    const pageUrlsRef = useRef<string[]>([]);
+    const [progress, setProgress] = useState("");
     // Original font programs pulled out of the PDF, keyed by font object name
     const measureCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const nextIdRef = useRef(1_000_000);
     const webFacesRef = useRef<Map<string, WebFace | null>>(new Map());
     const fontDataRef = useRef<Map<string, Uint8Array>>(new Map());
-
-    useEffect(() => {
-        const loadPdfJs = async () => {
-            const pdfjsLib = await import("pdfjs-dist/build/pdf");
-            const worker = await import("pdfjs-dist/build/pdf.worker.min.js");
-            pdfjsLib.GlobalWorkerOptions.workerSrc = worker.default;
-            pdfjsRef.current = pdfjsLib;
-        };
-        loadPdfJs();
-    }, []);
 
     useEffect(() => {
         const el = pagesRef.current;
@@ -247,16 +360,6 @@ export default function ToolClient() {
     const handleFile = async (selectedFile: File) => {
         setError(null);
         setNotice(null);
-        // The PDF reader loads in the background; wait for it instead of ignoring the file
-        let waited = 0;
-        while (!pdfjsRef.current && waited < 100) {
-            await new Promise((r) => setTimeout(r, 100));
-            waited++;
-        }
-        if (!pdfjsRef.current) {
-            setError("The PDF reader is still loading. Please try again in a moment.");
-            return;
-        }
         const problem = await checkPdfFile(selectedFile);
         if (problem) {
             setError(problem);
@@ -264,9 +367,13 @@ export default function ToolClient() {
         }
 
         needsFlatRef.current = false;
+        pageUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+        pageUrlsRef.current = [];
+        setProgress("Opening PDF...");
         setZoom(1);
         setDone(null);
         setLoading(true);
+        beginWork();
         setFile(selectedFile);
         // Start downloading the save-time libraries while the user reads and edits
         void import("pdf-lib");
@@ -274,13 +381,14 @@ export default function ToolClient() {
 
         try {
             const data = new Uint8Array(await selectedFile.arrayBuffer());
-            const pdfjs = pdfjsRef.current;
+            const pdfjs = await loadPdfJs();
             const pdf = await pdfjs.getDocument({ data, fontExtraProperties: true }).promise;
             fontDataRef.current = new Map();
             const fontStats = new Map<string, FontInfo>();
             const result: PageData[] = [];
 
             for (let p = 1; p <= pdf.numPages; p++) {
+                setProgress(`Reading page ${p} of ${pdf.numPages}...`);
                 const page = await pdf.getPage(p);
                 const viewport = page.getViewport({ scale: SCALE });
                 if (page.rotate % 360 !== 0 || page.view[0] !== 0 || page.view[1] !== 0) needsFlatRef.current = true;
@@ -383,11 +491,22 @@ export default function ToolClient() {
                     }
                 }
 
+                // A picture kept as an object URL lives outside the JavaScript heap, so long PDFs do not exhaust memory
+                const pngBlob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+                if (!pngBlob) throw new Error("canvas");
+                const imageUrl = URL.createObjectURL(pngBlob);
+                pageUrlsRef.current.push(imageUrl);
+                const pageWidth = viewport.width;
+                const pageHeight = viewport.height;
+                canvas.width = 0;
+                canvas.height = 0;
+                page.cleanup();
+
                 result.push({
-                    image: canvas.toDataURL("image/png"),
-                    width: viewport.width,
-                    height: viewport.height,
-                    pdfHeight: viewport.height / SCALE,
+                    image: imageUrl,
+                    width: pageWidth,
+                    height: pageHeight,
+                    pdfHeight: pageHeight / SCALE,
                     items,
                 });
             }
@@ -411,6 +530,7 @@ export default function ToolClient() {
                     }
                 })
             );
+            pdf.destroy?.();
             setPages(result);
             setFonts(Array.from(fontStats.values()));
             // Nothing to click: usually a scan (pictures of text) or only sideways text
@@ -422,9 +542,12 @@ export default function ToolClient() {
             setFile(null);
         } finally {
             setLoading(false);
+            endWork();
+            setProgress("");
         }
     };
 
+    const updateTextRef = useRef<(page: number, id: number, text: string) => void>(() => {});
     const updateText = (pageIdx: number, itemId: number, text: string) => {
         setPages((prev) =>
             prev.map((pg, i) =>
@@ -432,6 +555,7 @@ export default function ToolClient() {
             )
         );
     };
+    updateTextRef.current = updateText;
 
     const activeItem = activeKey ? pages[activeKey.page]?.items.find((i) => i.id === activeKey.id) : undefined;
 
@@ -451,25 +575,8 @@ export default function ToolClient() {
         return { bold, italic, styleChanged, cssOverride, faceKey };
     };
 
-    const measure = (text: string, fontSize: number, family: string) => {
-        const ctx = (measureCanvasRef.current ||= document.createElement("canvas")).getContext("2d")!;
-        ctx.font = `${fontSize}px ${family}`;
-        return ctx.measureText(text).width;
-    };
-
-    // Text before the first change keeps the PDF's own pixels; only the rest of the run is rewritten.
-    // Returns how many characters that untouched start has and how wide it is on screen.
-    const layoutOf = (it: TextItem) => {
-        if (convertAll || it.styleChanged || it.fromSplit) return { prefixLen: 0, prefixPx: 0 };
-        const a = it.original;
-        const b = it.text;
-        let n = 0;
-        while (n < a.length && n < b.length && a[n] === b[n]) n++;
-        if (n === 0) return { prefixLen: 0, prefixPx: 0 };
-        const full = measure(a, it.fontSize, it.origStack);
-        const k = full > 0 ? (it.coverWidth * SCALE) / full : 1;
-        return { prefixLen: n, prefixPx: measure(a.slice(0, n), it.fontSize, it.origStack) * k };
-    };
+    const measure = measureText;
+    const layoutOf = (it: TextItem) => layoutFor(it, convertAll);
 
     const toggleStyle = async (kind: "bold" | "italic") => {
         if (!activeKey || !activeItem) return;
@@ -575,11 +682,20 @@ export default function ToolClient() {
     // Whether a run is drawn by us (true) or left as the PDF has it (false)
     const isRedrawn = (it: TextItem) => !it.locked && (convertAll || isEdited(it));
 
+    // Stable handlers for the memoised pages
+    const toggleRef = useRef(toggleStyle);
+    toggleRef.current = toggleStyle;
+    const onToggleStyle = useCallback((kind: "bold" | "italic") => toggleRef.current(kind), []);
+    const onFocusItem = useCallback((page: number, id: number) => setActiveKey({ page, id }), []);
+    const onBlurItem = useCallback(() => setActiveKey(null), []);
+    const onInputItem = useCallback((page: number, id: number, text: string) => updateTextRef.current(page, id, text), []);
+
     const editedCount = pages.reduce((n, pg) => n + pg.items.filter(isEdited).length, 0);
 
     const processAndDownload = async () => {
         if (!file) return;
         setLoading(true);
+        beginWork();
         try {
             // Loaded only when saving, so the page itself stays small and fast
             const { PDFDocument, StandardFonts, rgb, setCharacterSpacing } = await import("pdf-lib");
@@ -639,7 +755,7 @@ export default function ToolClient() {
 
             let skipped = 0;
             if (flat) {
-                const src = await pdfjsRef.current.getDocument({ data: new Uint8Array(sourceBytes.slice(0)) }).promise;
+                const src = await (await loadPdfJs()).getDocument({ data: new Uint8Array(sourceBytes.slice(0)) }).promise;
                 for (let p = 0; p < pages.length; p++) {
                     const page = await src.getPage(p + 1);
                     const viewport = page.getViewport({ scale: FLAT_SCALE });
@@ -747,6 +863,7 @@ export default function ToolClient() {
             setError(`The edited PDF could not be saved. ${pdfErrorMessage(err)}`);
         } finally {
             setLoading(false);
+            endWork();
         }
     };
 
@@ -762,6 +879,8 @@ export default function ToolClient() {
         setFile(null);
         setPages([]);
         setFonts([]);
+        pageUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+        pageUrlsRef.current = [];
     };
 
 
@@ -781,8 +900,9 @@ export default function ToolClient() {
                         buttonLabel="Select PDF"
                         hint="PDF files only, up to 150 MB. Password-protected PDFs cannot be opened."
                         onFiles={(files) => handleFile(files[0])}
+                        onIntent={prefetchPdfJs}
                         loading={loading}
-                        loadingText={"Reading PDF..."}
+                        loadingText={progress || "Reading PDF..."}
                     />
                 </div>
             ) : (
@@ -892,86 +1012,17 @@ export default function ToolClient() {
                         {pages.map((pg, pageIdx) => {
                           const sc = (avail ? Math.min(1, avail / pg.width) : 1) * zoom;
                           return (
-                            <div key={pageIdx} className="relative shrink-0 border border-slate-200 bg-white shadow-md" style={{ width: pg.width * sc, height: pg.height * sc }}>
+                            <div key={pageIdx} className="relative shrink-0 border border-slate-200 bg-white shadow-md" style={{ width: pg.width * sc, height: pg.height * sc, contentVisibility: "auto", containIntrinsicSize: `${pg.width * sc}px ${pg.height * sc}px` } as React.CSSProperties}>
                             <div className="absolute left-0 top-0" style={{ width: pg.width, height: pg.height, transform: `scale(${sc})`, transformOrigin: "0 0" }}>
-                                <img src={pg.image} alt={`Page ${pageIdx + 1} of the PDF`} width={pg.width} height={pg.height} draggable={false} className="absolute inset-0 select-none" />
-
-                                {pg.items.filter((it) => !it.locked).map((it) => {
-                                    const key = `${pageIdx}-${it.id}`;
-                                    const touched = isRedrawn(it);
-                                    const lay = touched ? layoutOf(it) : { prefixLen: 0, prefixPx: 0 };
-                                    const decoration = it.underline
-                                        ? { textDecorationLine: "underline" as const, textDecorationColor: css(it.underline.color), textDecorationThickness: `${it.underline.thick}px` }
-                                        : {};
-                                    return (
-                                        <Fragment key={key}>
-                                        {touched && it.coverWidth > 0 && (
-                                            // Hides only the part of the original that is being rewritten; the untouched start stays as the PDF drew it
-                                            <div
-                                                className="absolute pointer-events-none"
-                                                style={{ left: it.coverLeft + lay.prefixPx - 1, top: it.top, width: it.coverWidth * SCALE - lay.prefixPx + 2, height: it.wipeHeight, backgroundColor: css(it.bg) }}
-                                            />
-                                        )}
-                                        {touched && (
-                                            <div
-                                                className="absolute pointer-events-none whitespace-pre"
-                                                style={{
-                                                    left: it.left + lay.prefixPx,
-                                                    top: it.top,
-                                                    height: it.wipeHeight,
-                                                    lineHeight: `${it.boxHeight}px`,
-                                                    fontSize: it.fontSize,
-                                                    fontFamily: it.cssOverride ?? it.cssFont,
-                                                    // Every face in the stack is already bold/italic where needed; styling again would double it
-                                                    fontWeight: 400,
-                                                    fontStyle: "normal",
-                                                    color: css(it.color),
-                                                    letterSpacing: it.tracking || undefined,
-                                                    ...decoration,
-                                                }}
-                                            >
-                                                {it.text.slice(lay.prefixLen)}
-                                            </div>
-                                        )}
-                                        <div
-                                            contentEditable
-                                            role="textbox"
-                                            aria-label={`Edit text on page ${pageIdx + 1}: ${it.original.slice(0, 50)}`}
-                                            data-item={`${pageIdx}:${it.id}`}
-                                            suppressContentEditableWarning
-                                            spellCheck={false}
-                                            onFocus={() => setActiveKey({ page: pageIdx, id: it.id })}
-                                            onKeyDown={(e) => {
-                                                if ((e.metaKey || e.ctrlKey) && (e.key === "b" || e.key === "i")) {
-                                                    e.preventDefault();
-                                                    toggleStyle(e.key === "b" ? "bold" : "italic");
-                                                }
-                                            }}
-                                            onInput={(e) => updateText(pageIdx, it.id, e.currentTarget.textContent ?? "")}
-                                            onBlur={() => setActiveKey(null)}
-                                            className="absolute outline-none whitespace-pre cursor-text hover:outline hover:outline-1 hover:outline-[#0062cc]/60 focus:outline focus:outline-2 focus:outline-[#0062cc]"
-                                            style={{
-                                                left: it.left,
-                                                top: it.top,
-                                                minWidth: it.boxWidth,
-                                                height: it.wipeHeight,
-                                                lineHeight: `${it.boxHeight}px`,
-                                                fontSize: it.fontSize,
-                                                // The text itself is drawn by the layers above; this layer only takes typing, so its caret follows the PDF's own font
-                                                fontFamily: convertAll || it.styleChanged ? it.cssOverride ?? it.cssFont : it.origStack,
-                                                letterSpacing: convertAll || it.styleChanged ? it.tracking || undefined : undefined,
-                                                fontWeight: 400,
-                                                fontStyle: "normal",
-                                                color: "transparent",
-                                                caretColor: css(it.color),
-                                                backgroundColor: "transparent",
-                                            }}
-                                        >
-                                            {it.domText}
-                                        </div>
-                                        </Fragment>
-                                    );
-                                })}
+                                <PageItems
+                                    pg={pg}
+                                    pageIdx={pageIdx}
+                                    convertAll={convertAll}
+                                    onFocusItem={onFocusItem}
+                                    onBlurItem={onBlurItem}
+                                    onInputItem={onInputItem}
+                                    onToggleStyle={onToggleStyle}
+                                />
                             </div>
                             </div>
                           );

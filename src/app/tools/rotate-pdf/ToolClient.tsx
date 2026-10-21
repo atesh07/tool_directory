@@ -1,6 +1,10 @@
 "use client";
 
+import { beginWork, endWork } from "@/lib/crashGuard";
+
 import ErrorNotice from "@/components/tools/ErrorNotice";
+import PageThumb from "@/components/tools/PageThumb";
+import { openPdf, prefetchPdfJs } from "@/lib/pdfjs";
 import UploadZone from "@/components/tools/UploadZone";
 import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
 import { downloadBlob } from "@/lib/download";
@@ -26,31 +30,12 @@ export default function ToolClient() {
     const [done, setDone] = useState<string | null>(null);
     const [progress, setProgress] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const pdfjsRef = useRef<any>(null);
-
-    useEffect(() => {
-        const loadPdfJs = async () => {
-            const pdfjsLib = await import("pdfjs-dist/build/pdf");
-            const worker = await import("pdfjs-dist/build/pdf.worker.min.js");
-            pdfjsLib.GlobalWorkerOptions.workerSrc = worker.default;
-            pdfjsRef.current = pdfjsLib;
-        };
-        loadPdfJs();
-    }, []);
+    // The open PDF. Page previews are drawn from it only when they scroll into view.
+    const pdfRef = useRef<any>(null);
 
     const handleFile = async (selectedFile: File) => {
         setError(null);
         setDone(null);
-        // The PDF reader loads in the background; wait for it instead of ignoring the file
-        let waited = 0;
-        while (!pdfjsRef.current && waited < 100) {
-            await new Promise((r) => setTimeout(r, 100));
-            waited++;
-        }
-        if (!pdfjsRef.current) {
-            setError("The PDF reader is still loading. Please try again in a moment.");
-            return;
-        }
         const problem = await checkPdfFile(selectedFile);
         if (problem) {
             setError(problem);
@@ -58,46 +43,25 @@ export default function ToolClient() {
         }
 
         setLoading(true);
+        beginWork();
         setFile(selectedFile);
 
-        const reader = new FileReader();
-        reader.onload = async function () {
-            try {
-                const typedarray = new Uint8Array(this.result as ArrayBuffer);
-                const pdf = await pdfjsRef.current.getDocument({ data: typedarray }).promise;
-                const imgs: string[] = [];
-                const rots: number[] = [];
-
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    setProgress(`Reading page ${i} of ${pdf.numPages}`);
-                    const page = await pdf.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.5 });
-                    const canvas = document.createElement("canvas");
-                    const context = canvas.getContext("2d")!;
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
-
-                    await page.render({ canvasContext: context, viewport }).promise;
-                    imgs.push(canvas.toDataURL("image/jpeg", 0.8));
-                    rots.push(0);
-                }
-
-                setImages(imgs);
-                setRotations(rots);
-            } catch (err) {
-                setError(pdfErrorMessage(err));
-                setFile(null);
-            } finally {
-                setLoading(false);
-                setProgress("");
-            }
-        };
-        reader.onerror = () => {
-            setError("The file could not be read. Please choose it again.");
+        setProgress("Opening PDF...");
+        try {
+            const pdf = await openPdf(selectedFile);
+            pdfRef.current?.destroy?.();
+            pdfRef.current = pdf;
+            // One empty slot per page; the previews are drawn later, as they scroll into view
+            setImages(new Array(pdf.numPages).fill(""));
+            setRotations(new Array(pdf.numPages).fill(0));
+        } catch (err) {
+            setError(pdfErrorMessage(err));
             setFile(null);
+        } finally {
             setLoading(false);
-        };
-        reader.readAsArrayBuffer(selectedFile);
+            endWork();
+            setProgress("");
+        }
     };
 
     const rotateAllLeft = () => {
@@ -125,11 +89,12 @@ export default function ToolClient() {
     };
 
     const processAndDownload = async () => {
-        // Loaded only when needed, so the page itself stays small and fast
-        const { PDFDocument, degrees } = await import("pdf-lib");
         if (!file) return;
         setLoading(true);
+        beginWork();
         try {
+            // Loaded only when needed, so the page itself stays small and fast
+            const { PDFDocument, degrees } = await import("pdf-lib");
             const arrayBuffer = await file.arrayBuffer();
             const pdfDoc = await PDFDocument.load(arrayBuffer);
             const pages = pdfDoc.getPages();
@@ -150,10 +115,13 @@ export default function ToolClient() {
             setError(`Could not rotate this PDF. ${pdfErrorMessage(err)}`);
         } finally {
             setLoading(false);
+            endWork();
         }
     };
 
     const startNew = () => {
+        pdfRef.current?.destroy?.();
+        pdfRef.current = null;
         setDone(null);
         setError(null);
         setFile(null);
@@ -181,6 +149,7 @@ export default function ToolClient() {
                         buttonLabel="Select PDF"
                         hint="PDF files only, up to 150 MB. Password-protected PDFs cannot be opened."
                         onFiles={(files) => handleFile(files[0])}
+                        onIntent={prefetchPdfJs}
                         loading={loading}
                         loadingText={progress || "Processing PDF..."}
                     />
@@ -222,15 +191,18 @@ export default function ToolClient() {
                     {/* Grid of pages */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {images.map((img, index) => (
-                            <div key={index} className="group flex flex-col items-center bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-xl transition-all duration-300">
+                            <div key={index} className="[content-visibility:auto] [contain-intrinsic-size:auto_260px] group flex flex-col items-center bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-xl transition-all duration-300">
 
                                 {/* Image Container */}
                                 <div className="w-full aspect-square flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden mb-4 relative shadow-sm border border-slate-100">
-                                    <img
-                                        src={img}
+                                    <PageThumb
+                                        pdf={pdfRef.current}
+                                        pageNumber={index + 1}
+                                        scale={0.9}
                                         alt={`Page ${index + 1} preview`}
-                                        className="max-w-full max-h-full transition-transform duration-300 ease-in-out"
-                                        style={{ transform: `rotate(${rotations[index]}deg)` }}
+                                        className="flex h-full w-full items-center justify-center"
+                                        imgClassName="max-w-full max-h-full transition-transform duration-300 ease-in-out"
+                                        imgStyle={{ transform: `rotate(${rotations[index]}deg)` }}
                                     />
 
                                     {/* Page Badge */}

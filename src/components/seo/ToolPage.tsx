@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BookOpen, Check, ChevronDown, Lock } from "lucide-react";
 import JsonLd from "./JsonLd";
+import InterruptedNotice from "@/components/tools/InterruptedNotice";
 import { TOOLS, getTool, toolPath } from "@/data/tools";
 import { getGuide, guidePath } from "@/data/guides";
 import { breadcrumbJsonLd, faqJsonLd, softwareJsonLd } from "@/lib/seo";
@@ -50,7 +51,10 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
 
       {/* The tool */}
       <div className={`${tool.wide ? "max-w-6xl" : "max-w-4xl"} mx-auto px-4 w-full relative z-10 mb-16`}>
-        <div className="bg-white shadow-sm border border-slate-200 rounded-xl p-4 md:p-8">{children}</div>
+        <div className="space-y-4">
+          <InterruptedNotice />
+          <div className="bg-white shadow-sm border border-slate-200 rounded-xl p-4 md:p-8">{children}</div>
+        </div>
       </div>
 
       {/* How to */}

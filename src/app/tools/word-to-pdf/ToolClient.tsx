@@ -1,5 +1,7 @@
 "use client";
 
+import { beginWork, endWork } from "@/lib/crashGuard";
+
 import React, { useRef, useState } from "react";
 import { Info } from "lucide-react";
 import ErrorNotice from "@/components/tools/ErrorNotice";
@@ -44,6 +46,7 @@ export default function ToolClient() {
     }
 
     setLoading(true);
+    beginWork();
     let container: HTMLDivElement | null = null;
     try {
       setStatus("Loading converter...");
@@ -203,6 +206,7 @@ export default function ToolClient() {
     } finally {
       container?.remove();
       setLoading(false);
+      endWork();
       setStatus("");
     }
   };

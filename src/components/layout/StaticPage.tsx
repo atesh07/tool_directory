@@ -19,7 +19,7 @@ export default function StaticPage({
           <span aria-current="page" className="text-slate-700">{title}</span>
         </nav>
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">{title}</h1>
-        {updated && <p className="text-sm text-slate-400 mb-8">Last updated: {updated}</p>}
+        {updated && <p className="text-sm text-slate-500 mb-8">Last updated: {updated}</p>}
         <div className="space-y-4 text-slate-600 leading-relaxed [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-slate-900 [&_h2]:mt-8 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-1 [&_a]:text-[#0066cc] [&_a]:underline">
           {children}
         </div>

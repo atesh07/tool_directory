@@ -62,9 +62,9 @@ export default function HowItWorks() {
                     </div>
                   </div>
 
-                  <h4 className="font-bold text-xl text-slate-900 mb-3">
+                  <h3 className="font-bold text-xl text-slate-900 mb-3">
                     {step.title}
-                  </h4>
+                  </h3>
                   <p className="text-slate-500 leading-relaxed max-w-xs mx-auto">
                     {step.desc}
                   </p>

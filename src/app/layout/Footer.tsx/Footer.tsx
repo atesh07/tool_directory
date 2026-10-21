@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Mail, Heart, ArrowRight } from "lucide-react";
 import { SITE, TOOLS, toolPath } from "@/data/tools";
@@ -93,7 +91,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-slate-100 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
+        <div className="border-t border-slate-100 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-600">
           <p>© {new Date().getFullYear()} ToolsTree. All rights reserved.</p>
 
           <div className="flex flex-wrap justify-center gap-x-6">
