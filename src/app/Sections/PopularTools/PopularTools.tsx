@@ -37,7 +37,7 @@ const PopularTools = () => {
         {/* Heading & Search Bar */}
         <div className="text-center mb-16 max-w-3xl mx-auto ">
           <h2 className="text-4xl font-bold text-slate-900 tracking-tight mb-4">
-            Most Popular Tools
+            Free PDF Tools
           </h2>
           <p className="text-lg text-slate-600 mb-8">
             Fast, simple, and powerful tools to manage, edit, and convert your PDFs in seconds.
@@ -72,8 +72,9 @@ const PopularTools = () => {
                           </div>
   
                           {/* Text Content */}
-                          <h3 className="font-semibold text-slate-900 mb-2 group-hover:text-[#0066cc] transition-colors">
+                          <h3 className="font-semibold text-slate-900 mb-2 group-hover:text-[#0066cc] transition-colors flex items-center gap-2">
                             {tool.title}
+                  {!tool.href && <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">Soon</span>}
                           </h3>
                           <p className="text-sm text-slate-600 leading-relaxed">
                             {tool.description}

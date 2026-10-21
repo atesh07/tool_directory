@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Twitter, Mail, Heart, Linkedin, ArrowRight } from "lucide-react";
+import { Mail, Heart, ArrowRight } from "lucide-react";
 import { SITE, TOOLS, toolPath } from "@/data/tools";
 
 const Footer = () => {
@@ -22,16 +22,15 @@ const Footer = () => {
               Free online tools to convert, edit, and manage PDFs and images easily — all in one secure place.
             </p>
 
-            {/* Social Icons */}
+            {/* Only real contact link; add social profiles here once they exist */}
             <div className="flex gap-3 mt-6">
-              {[Linkedin, Twitter, Mail].map((Icon, idx) => (
-                <div 
-                  key={idx} 
-                  className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-[#0066cc]/10 hover:text-[#0066cc] hover:border-[#0066cc]/20 transition-all duration-300 cursor-pointer"
-                >
-                  <Icon size={18} />
-                </div>
-              ))}
+              <a
+                href={`mailto:${SITE.email}`}
+                aria-label="Email us"
+                className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-[#0066cc]/10 hover:text-[#0066cc] hover:border-[#0066cc]/20 transition-all duration-300"
+              >
+                <Mail size={18} />
+              </a>
             </div>
           </div>
 

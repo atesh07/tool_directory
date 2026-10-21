@@ -1,5 +1,9 @@
 "use client";
 
+import ErrorNotice from "@/components/tools/ErrorNotice";
+import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
+import { downloadBlob } from "@/lib/download";
+
 import { useState, useRef } from "react";
 import { 
   Upload, 
@@ -32,13 +36,14 @@ interface PDFItem {
 export default function ToolClient() {
   const [items, setItems] = useState<PDFItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- Generate Thumbnail ---
-  const generateThumbnail = async (file: File): Promise<string> => {
+  // --- Generate Thumbnail (also proves the PDF can be read) ---
+  const generateThumbnail = async (file: File): Promise<{ preview: string; problem?: string }> => {
     try {
       const data = await file.arrayBuffer();
       const pdfjs = await loadPdfJs();
@@ -51,28 +56,43 @@ export default function ToolClient() {
       canvas.width = viewport.width;
       if (context) {
         await page.render({ canvasContext: context, viewport }).promise;
-        return canvas.toDataURL();
+        return { preview: canvas.toDataURL() };
       }
-    } catch (e) { console.error(e); }
-    return "";
+      return { preview: "" };
+    } catch (e) {
+      console.error(e);
+      return { preview: "", problem: pdfErrorMessage(e) };
+    }
   };
 
   // --- Upload Handler ---
   const handleFileUpload = async (files: FileList | null) => {
     if (!files) return;
+    setError(null);
     setLoading(true);
-    const validFiles = Array.from(files).filter(f => f.type === "application/pdf");
-    
-    const newItems = await Promise.all(
-      validFiles.map(async (file) => ({
-        id: crypto.randomUUID(),
-        file,
-        preview: await generateThumbnail(file)
-      }))
+
+    // Check every file first and say exactly which ones were left out and why
+    const validFiles: File[] = [];
+    const problems: string[] = [];
+    for (const f of Array.from(files)) {
+      const problem = await checkPdfFile(f);
+      if (problem) problems.push(`"${f.name}": ${problem}`);
+      else validFiles.push(f);
+    }
+    const checked = await Promise.all(
+      validFiles.map(async (file) => ({ file, thumb: await generateThumbnail(file) }))
     );
+    const newItems: PDFItem[] = [];
+    for (const { file, thumb } of checked) {
+      if (thumb.problem) problems.push(`"${file.name}": ${thumb.problem}`);
+      else newItems.push({ id: crypto.randomUUID(), file, preview: thumb.preview });
+    }
+    if (problems.length) setError(`${problems.length === 1 ? "One file was" : `${problems.length} files were`} not added. ${problems.join(" ")}`);
 
     setItems((prev) => [...prev, ...newItems]);
     setLoading(false);
+    // Allow choosing the same file again after it was removed
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // --- Reordering Handlers ---
@@ -110,26 +130,26 @@ export default function ToolClient() {
     // Loaded only when needed, so the page itself stays small and fast
     const { PDFDocument } = await import("pdf-lib");
     if (items.length < 2) return;
+    setError(null);
     setLoading(true);
+    let current = "";
     try {
       const mergedPdf = await PDFDocument.create();
       for (const item of items) {
+        current = item.file.name;
         const bytes = await item.file.arrayBuffer();
         const pdf = await PDFDocument.load(bytes);
         const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
         pages.forEach(p => mergedPdf.addPage(p));
       }
+      current = "";
       const pdfBytes = await mergedPdf.save();
       const pdfBuffer = new ArrayBuffer(pdfBytes.byteLength);
       new Uint8Array(pdfBuffer).set(pdfBytes);
       const blob = new Blob([pdfBuffer], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `merged_${Date.now()}.pdf`;
-      a.click();
+      downloadBlob(blob, `merged_${Date.now()}.pdf`);
     } catch (err) {
-      alert("Error merging. Ensure files aren't encrypted.");
+      setError(current ? `"${current}" could not be merged. ${pdfErrorMessage(err)}` : `Could not merge these files. ${pdfErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -137,6 +157,7 @@ export default function ToolClient() {
 
   return (
     <div className="space-y-8">
+      <ErrorNotice message={error} onDismiss={() => setError(null)} />
       {/* Upload Area */}
       <div
         onDragOver={onDragContainer}

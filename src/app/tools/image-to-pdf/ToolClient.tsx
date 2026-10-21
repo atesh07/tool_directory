@@ -1,5 +1,8 @@
 "use client";
 
+import ErrorNotice from "@/components/tools/ErrorNotice";
+import { checkImageFile } from "@/lib/pdfFiles";
+
 import { useState, useRef } from "react";
 import { 
   Upload, 
@@ -16,14 +19,24 @@ export default function ToolClient() {
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState("");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // --- Upload Handler ---
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    if (input.files && input.files.length > 0) {
+      setError(null);
+      const picked = Array.from(input.files);
+      // Allow choosing the same file again after it was removed
+      input.value = "";
+      const checks = await Promise.all(picked.map(checkImageFile));
+      const problems = checks.filter((c): c is string => !!c);
+      const newFiles = picked.filter((_, i) => !checks[i]);
+      if (problems.length) setError(`${problems.join(" ")} Only JPG and PNG images can be added.`);
       const newUrls = newFiles.map((file) => URL.createObjectURL(file));
 
       setImages((prev) => [...prev, ...newFiles]);
@@ -84,63 +97,77 @@ export default function ToolClient() {
 
   // --- PDF Generation ---
   const convertToPdf = async () => {
-    // Loaded only when needed, so the page itself stays small and fast
-    const jsPDF = (await import("jspdf")).default;
     if (images.length === 0) {
-      alert("File is empty! Please upload images first.");
+      setError("Add at least one JPG or PNG image first.");
       return;
     }
-
+    setError(null);
     setLoading(true);
-    const pdf = new jsPDF();
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const margin = 10;
-    const maxWidth = pageWidth - margin * 2;
-    const maxHeight = pageHeight - margin * 2;
+    let current = "";
+    try {
+      // Loaded only when needed, so the page itself stays small and fast
+      const jsPDF = (await import("jspdf")).default;
+      const pdf = new jsPDF();
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 10;
+      const maxWidth = pageWidth - margin * 2;
+      const maxHeight = pageHeight - margin * 2;
+      // About 300 dpi on A4; bigger pictures are scaled down so the PDF stays small and the tab does not run out of memory
+      const MAX_PX = 3508;
 
-    for (let i = 0; i < images.length; i++) {
-      const imgUrl = imageUrls[i];
+      for (let i = 0; i < images.length; i++) {
+        current = images[i].name;
+        setProgress(`Adding image ${i + 1} of ${images.length}`);
 
-      // Load image to get dimensions
-      const imgProps = await new Promise<{
-        width: number;
-        height: number;
-        ratio: number;
-      }>((resolve) => {
-        const img = new Image();
-        img.src = imgUrl;
-        img.onload = () => {
-          resolve({
-            width: img.width,
-            height: img.height,
-            ratio: img.width / img.height,
-          });
-        };
-      });
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error("decode"));
+          el.src = imageUrls[i];
+        });
 
-      // Calculate PDF dimensions
-      let pdfImgWidth = maxWidth;
-      let pdfImgHeight = maxWidth / imgProps.ratio;
+        // Drawing through a canvas applies the photo's rotation (phone photos) and the size limit
+        const scale = Math.min(1, MAX_PX / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("canvas");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const isPng = /png/i.test(images[i].type);
+        const data = canvas.toDataURL(isPng ? "image/png" : "image/jpeg", 0.92);
 
-      if (pdfImgHeight > maxHeight) {
-        pdfImgHeight = maxHeight;
-        pdfImgWidth = maxHeight * imgProps.ratio;
+        const ratio = canvas.width / canvas.height;
+        let w = maxWidth;
+        let h = maxWidth / ratio;
+        if (h > maxHeight) {
+          h = maxHeight;
+          w = maxHeight * ratio;
+        }
+        if (i > 0) pdf.addPage();
+        pdf.addImage(data, isPng ? "PNG" : "JPEG", (pageWidth - w) / 2, (pageHeight - h) / 2, w, h);
       }
 
-      const xOffset = (pageWidth - pdfImgWidth) / 2;
-      const yOffset = (pageHeight - pdfImgHeight) / 2;
-
-      if (i > 0) pdf.addPage();
-      pdf.addImage(imgUrl, "JPEG", xOffset, yOffset, pdfImgWidth, pdfImgHeight);
+      current = "";
+      pdf.save("converted-document.pdf");
+    } catch (err) {
+      setError(
+        current
+          ? `"${current}" could not be added. It may be damaged or too large for this browser.`
+          : "Could not create the PDF. Please try fewer or smaller images."
+      );
+    } finally {
+      setLoading(false);
+      setProgress("");
     }
-
-    pdf.save("converted-document.pdf");
-    setLoading(false);
   };
 
   return (
     <div className="space-y-8">
+      <ErrorNotice message={error} onDismiss={() => setError(null)} />
       {/* Upload Area */}
       <div
         onClick={() => fileInputRef.current?.click()}
@@ -256,7 +283,7 @@ export default function ToolClient() {
           `}
         >
           {loading ? (
-            "Converting..."
+            progress || "Converting..."
           ) : (
             <>
               <Download className="w-6 h-6" />

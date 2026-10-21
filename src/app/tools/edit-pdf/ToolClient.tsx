@@ -2,6 +2,9 @@
 
 import { Fragment, useState, useRef, useEffect } from "react";
 import type { PDFDocument as PDFDocumentType } from "pdf-lib";
+import ErrorNotice from "@/components/tools/ErrorNotice";
+import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
+import { downloadBlob } from "@/lib/download";
 import { loadWebFace, type WebFace } from "./webFonts";
 import { RefreshCcw, Download, Trash2, Lock, Bold, Italic } from "lucide-react";
 
@@ -201,6 +204,10 @@ export default function ToolClient() {
     const [pages, setPages] = useState<PageData[]>([]);
     const [fonts, setFonts] = useState<FontInfo[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
+    // Pages with a rotation or an offset page box cannot be edited in place; the PDF is rebuilt from page images instead
+    const needsFlatRef = useRef(false);
     // true: every line is first rebuilt in a matching font, so edits never change the look of a line
     const [convertAll, setConvertAll] = useState(true);
     const [activeKey, setActiveKey] = useState<{ page: number; id: number } | null>(null);
@@ -224,12 +231,25 @@ export default function ToolClient() {
     }, []);
 
     const handleFile = async (selectedFile: File) => {
-        if (!pdfjsRef.current) return;
-        if (selectedFile.type !== "application/pdf") {
-            alert("Please upload a valid PDF file.");
+        setError(null);
+        setNotice(null);
+        // The PDF reader loads in the background; wait for it instead of ignoring the file
+        let waited = 0;
+        while (!pdfjsRef.current && waited < 100) {
+            await new Promise((r) => setTimeout(r, 100));
+            waited++;
+        }
+        if (!pdfjsRef.current) {
+            setError("The PDF reader is still loading. Please try again in a moment.");
+            return;
+        }
+        const problem = await checkPdfFile(selectedFile);
+        if (problem) {
+            setError(problem);
             return;
         }
 
+        needsFlatRef.current = false;
         setLoading(true);
         setFile(selectedFile);
         // Start downloading the save-time libraries while the user reads and edits
@@ -247,6 +267,7 @@ export default function ToolClient() {
             for (let p = 1; p <= pdf.numPages; p++) {
                 const page = await pdf.getPage(p);
                 const viewport = page.getViewport({ scale: SCALE });
+                if (page.rotate % 360 !== 0 || page.view[0] !== 0 || page.view[1] !== 0) needsFlatRef.current = true;
                 const canvas = document.createElement("canvas");
                 const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
                 canvas.width = viewport.width;
@@ -279,7 +300,9 @@ export default function ToolClient() {
                     } catch { /* no embedded program (e.g. Type3), standard font fallback is used */ }
                     const generic = content.styles[it.fontName]?.fontFamily || "sans-serif";
                     const style = detectStyle(rawName, generic);
-                    const locked = isIconFont(rawName) || isStaticRun(it.str, rawName);
+                    // Sideways or slanted text (margin labels, stamps) is left exactly as the PDF has it
+                    const tilted = Math.abs(tx[1]) > 0.1 || Math.abs(tx[2]) > 0.1;
+                    const locked = isIconFont(rawName) || isStaticRun(it.str, rawName) || tilted;
 
                     const label = rawName.replace(/^[A-Z]{6}\+/, "") || it.fontName;
                     const stat = fontStats.get(label) || {
@@ -374,8 +397,12 @@ export default function ToolClient() {
             );
             setPages(result);
             setFonts(Array.from(fontStats.values()));
+            // Nothing to click: usually a scan (pictures of text) or only sideways text
+            if (result.every((pg) => pg.items.every((i) => i.locked))) {
+                setNotice("No editable text was found in this PDF. It may be a scan (pictures of text) or contain only sideways text. Try a PDF whose text can be selected.");
+            }
         } catch (err) {
-            alert("Error reading PDF. It may be password protected.");
+            setError(pdfErrorMessage(err));
             setFile(null);
         } finally {
             setLoading(false);
@@ -545,12 +572,17 @@ export default function ToolClient() {
             // Protected PDFs can be read for display but can't be edited in place; they are rebuilt from page images instead
             let flat = false;
             let pdfDoc: PDFDocumentType;
-            try {
-                pdfDoc = await PDFDocument.load(sourceBytes, { updateMetadata: false });
-            } catch (loadErr) {
-                console.warn("Falling back to a rebuilt PDF", loadErr);
+            if (needsFlatRef.current) {
                 flat = true;
                 pdfDoc = await PDFDocument.create();
+            } else {
+                try {
+                    pdfDoc = await PDFDocument.load(sourceBytes, { updateMetadata: false });
+                } catch (loadErr) {
+                    console.warn("Falling back to a rebuilt PDF", loadErr);
+                    flat = true;
+                    pdfDoc = await PDFDocument.create();
+                }
             }
             const fontMap = {
                 sans: [StandardFonts.Helvetica, StandardFonts.HelveticaBold, StandardFonts.HelveticaOblique, StandardFonts.HelveticaBoldOblique],
@@ -625,6 +657,10 @@ export default function ToolClient() {
                     const fallback = await getFallback(it);
                     const lay = layoutOf(it);
                     const prefixPdf = lay.prefixPx / SCALE;
+                    // Rebuilt pages are drawn from what is on screen, which stays correct for rotated pages and offset page boxes
+                    const baseX = flat ? it.left / SCALE : it.x;
+                    const baseY = flat ? pages[p].height / SCALE - (it.top + it.fontSize * 0.88) / SCALE : it.y;
+                    const size = flat ? it.fontSize / SCALE : it.size;
                     const tailText = it.text.slice(lay.prefixLen);
 
                     // Cover the original text with the sampled background
@@ -655,15 +691,13 @@ export default function ToolClient() {
                     }
                     if (!tailText.trim()) continue;
 
-                    const size = it.size;
-
-                    const startX = it.x + prefixPdf;
+                    const startX = baseX + prefixPdf;
                     let x = startX;
                     // Same per-character spacing as the preview so line widths match
                     const tc = it.tracking / SCALE;
                     if (tc) page.pushOperators(setCharacterSpacing(tc));
                     for (const run of runs) {
-                        page.drawText(run.text, { x, y: it.y, size, font: run.font, color: toRgb(it.color) });
+                        page.drawText(run.text, { x, y: baseY, size, font: run.font, color: toRgb(it.color) });
                         x += run.font.widthOfTextAtSize(run.text, size) + tc * Array.from(run.text).length;
                     }
                     if (tc) page.pushOperators(setCharacterSpacing(0));
@@ -671,7 +705,7 @@ export default function ToolClient() {
                     if (it.underline) {
                         page.drawRectangle({
                             x: startX,
-                            y: it.y - (it.underline.offset + it.underline.thick) / SCALE,
+                            y: baseY - (it.underline.offset + it.underline.thick) / SCALE,
                             width: x - startX,
                             height: it.underline.thick / SCALE,
                             color: toRgb(it.underline.color),
@@ -686,27 +720,27 @@ export default function ToolClient() {
             }
 
             const bytes = await pdfDoc.save();
-            const blob = new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `edited_${file.name}`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            // Revoking straight away can cancel the download, leaving a broken file
-            setTimeout(() => URL.revokeObjectURL(url), 30000);
-            if (flat) alert("This PDF is protected, so it was saved as page images with your text drawn on top. It looks the same but the unchanged text can no longer be selected.");
-            if (skipped > 0) alert(`Saved, but ${skipped} text run${skipped === 1 ? "" : "s"} could not be redrawn and kept the original text.`);
+            downloadBlob(new Blob([bytes as unknown as BlobPart], { type: "application/pdf" }), `edited_${file.name}`);
+            const notes: string[] = [];
+            if (flat) notes.push("This PDF is protected or has rotated pages, so it was saved as page images with your text drawn on top. It looks the same, but unchanged text and links can no longer be selected or clicked.");
+            if (skipped > 0) notes.push(`${skipped} text run${skipped === 1 ? "" : "s"} could not be redrawn and kept the original text.`);
+            if (notes.length) setNotice(notes.join(" "));
         } catch (err) {
             console.error("Save failed", err);
-            alert(`Error saving PDF: ${err instanceof Error ? err.message : String(err)}`);
+            setError(`The edited PDF could not be saved. ${pdfErrorMessage(err)}`);
         } finally {
             setLoading(false);
         }
     };
 
+    const retryPick = () => {
+        setError(null);
+        fileInputRef.current?.click();
+    };
+
     const startNew = () => {
+        setError(null);
+        setNotice(null);
         setFile(null);
         setPages([]);
         setFonts([]);
@@ -727,6 +761,8 @@ export default function ToolClient() {
 
     return (
         <div className="space-y-8">
+            <ErrorNotice message={error} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setError(null)} />
+            <ErrorNotice message={notice} tone="info" onDismiss={() => setNotice(null)} />
             <style dangerouslySetInnerHTML={{ __html: FALLBACK_CSS }} />
             {!file || pages.length === 0 ? (
                 <div className="max-w-3xl mx-auto">

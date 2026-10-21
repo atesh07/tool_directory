@@ -1,5 +1,8 @@
 "use client";
 
+import ErrorNotice from "@/components/tools/ErrorNotice";
+import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
+
 import { useState, useRef, useEffect } from "react";
 import { 
   Upload, 
@@ -15,6 +18,7 @@ import {
 export default function ToolClient() {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,9 +35,20 @@ export default function ToolClient() {
   }, []);
 
   const handleFile = async (file: File) => {
-    if (!pdfjsRef.current) return;
-    if (file.type !== "application/pdf") {
-      alert("Please upload a valid PDF file.");
+    setError(null);
+    // The PDF reader loads in the background; wait for it instead of ignoring the file
+    let waited = 0;
+    while (!pdfjsRef.current && waited < 100) {
+      await new Promise((r) => setTimeout(r, 100));
+      waited++;
+    }
+    if (!pdfjsRef.current) {
+      setError("The PDF reader is still loading. Please try again in a moment.");
+      return;
+    }
+    const problem = await checkPdfFile(file);
+    if (problem) {
+      setError(problem);
       return;
     }
 
@@ -51,7 +66,10 @@ export default function ToolClient() {
 
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 2 });
+          // 2x for sharp images, but never so large that the browser refuses to draw the page
+          const base = page.getViewport({ scale: 1 });
+          const scale = Math.min(2, 4096 / Math.max(base.width, base.height));
+          const viewport = page.getViewport({ scale });
           const canvas = document.createElement("canvas");
           const context = canvas.getContext("2d")!;
           canvas.width = viewport.width;
@@ -64,10 +82,14 @@ export default function ToolClient() {
 
         setImages(imgs);
       } catch (err) {
-        alert("Error processing PDF. It might be password protected.");
+        setError(pdfErrorMessage(err));
       } finally {
         setLoading(false);
       }
+    };
+    reader.onerror = () => {
+      setError("The file could not be read. Please choose it again.");
+      setLoading(false);
     };
     reader.readAsArrayBuffer(file);
   };
@@ -85,8 +107,14 @@ export default function ToolClient() {
     }
   };
 
+  const retryPick = () => {
+    setError(null);
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="space-y-8">
+      <ErrorNotice message={error} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setError(null)} />
       {images.length === 0 ? (
         <div
           onDragOver={onDragOver}

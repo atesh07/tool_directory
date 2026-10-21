@@ -1,5 +1,9 @@
 "use client";
 
+import ErrorNotice from "@/components/tools/ErrorNotice";
+import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
+import { downloadBlob } from "@/lib/download";
+
 import { useState, useRef, useEffect } from "react";
 import {
     Download,
@@ -15,6 +19,8 @@ export default function ToolClient() {
     const [images, setImages] = useState<string[]>([]);
     const [deletedPages, setDeletedPages] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [progress, setProgress] = useState("");
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pdfjsRef = useRef<any>(null);
@@ -30,9 +36,20 @@ export default function ToolClient() {
     }, []);
 
     const handleFile = async (selectedFile: File) => {
-        if (!pdfjsRef.current) return;
-        if (selectedFile.type !== "application/pdf") {
-            alert("Please upload a valid PDF file.");
+        setError(null);
+        // The PDF reader loads in the background; wait for it instead of ignoring the file
+        let waited = 0;
+        while (!pdfjsRef.current && waited < 100) {
+            await new Promise((r) => setTimeout(r, 100));
+            waited++;
+        }
+        if (!pdfjsRef.current) {
+            setError("The PDF reader is still loading. Please try again in a moment.");
+            return;
+        }
+        const problem = await checkPdfFile(selectedFile);
+        if (problem) {
+            setError(problem);
             return;
         }
 
@@ -48,6 +65,7 @@ export default function ToolClient() {
                 const imgs: string[] = [];
 
                 for (let i = 1; i <= pdf.numPages; i++) {
+                    setProgress(`Reading page ${i} of ${pdf.numPages}`);
                     const page = await pdf.getPage(i);
                     const viewport = page.getViewport({ scale: 1.0 }); // Slightly lower scale for faster render
                     const canvas = document.createElement("canvas");
@@ -61,11 +79,17 @@ export default function ToolClient() {
 
                 setImages(imgs);
             } catch (err) {
-                alert("Error reading PDF. It may be password protected.");
+                setError(pdfErrorMessage(err));
                 setFile(null);
             } finally {
                 setLoading(false);
+                setProgress("");
             }
+        };
+        reader.onerror = () => {
+            setError("The file could not be read. Please choose it again.");
+            setFile(null);
+            setLoading(false);
         };
         reader.readAsArrayBuffer(selectedFile);
     };
@@ -88,7 +112,7 @@ export default function ToolClient() {
         if (!file) return;
         
         if (deletedPages.size === images.length) {
-            alert("You cannot delete all pages from the PDF.");
+            setError("You cannot delete every page. Keep at least one page, or choose Reset selection.");
             return;
         }
 
@@ -106,14 +130,9 @@ export default function ToolClient() {
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `removed_pages_${file.name}`;
-            a.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, `removed_pages_${file.name}`);
         } catch (err) {
-            alert("Error modifying PDF.");
+            setError(`Could not remove the pages. ${pdfErrorMessage(err)}`);
         } finally {
             setLoading(false);
         }
@@ -139,8 +158,14 @@ export default function ToolClient() {
         }
     };
 
+    const retryPick = () => {
+        setError(null);
+        fileInputRef.current?.click();
+    };
+
     return (
         <div className="space-y-8">
+            <ErrorNotice message={error} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setError(null)} />
             {!file ? (
                 <div className="max-w-3xl mx-auto">
                     <div
@@ -168,7 +193,7 @@ export default function ToolClient() {
                             {loading ? (
                                 <>
                                     <RefreshCcw className="w-10 h-10 animate-spin text-[#0062cc]" />
-                                    <p className="text-xl font-medium text-slate-800">Processing PDF...</p>
+                                    <p className="text-xl font-medium text-slate-800">{progress || "Processing PDF..."}</p>
                                 </>
                             ) : (
                                 <>
@@ -269,6 +294,11 @@ export default function ToolClient() {
 
                     {/* Download Button */}
                     <div className="pt-6 flex flex-col items-center justify-center gap-3">
+                        {deletedPages.size === images.length && (
+                            <p role="status" className="text-sm text-red-600 font-medium">
+                                Every page is selected for removal. Keep at least one page to download.
+                            </p>
+                        )}
                         <button
                             onClick={processAndDownload}
                             disabled={loading || deletedPages.size === images.length}

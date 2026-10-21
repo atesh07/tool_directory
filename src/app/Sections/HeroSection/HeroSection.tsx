@@ -34,8 +34,8 @@ const HeroSection = () => {
           </h1>
 
           <p className="mt-6 text-lg md:text-xl text-zinc-500 leading-relaxed font-light">
-            Fast, simple, and secure PDF tools engineered for modern teams. 
-            Merge, split, compress, and protect your files—directly in your browser.
+            Edit, merge, split, rotate and convert PDFs and images. 
+            Everything runs in your browser, so your files are never uploaded.
           </p>
 
           {/* Premium CTA Buttons */}

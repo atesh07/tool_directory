@@ -4,19 +4,19 @@ const steps = [
   {
     number: "1",
     title: "Upload",
-    desc: "Select the Word, Excel, PowerPoint, PDF or other file you wish to convert.",
+    desc: "Choose a PDF, Word (.docx) or image file from your device.",
     icon: Upload,
   },
   {
     number: "2",
     title: "Start processing",
-    desc: "Our converter will transform your file to or from PDF in seconds.",
+    desc: "The tool works on your file inside your browser, so nothing is uploaded.",
     icon: PlayCircle,
   },
   {
     number: "3",
     title: "Download",
-    desc: "Download your converted document instantly after processing.",
+    desc: "Download the finished file as soon as it is ready.",
     icon: Download,
   },
 ];
@@ -29,10 +29,10 @@ export default function HowItWorks() {
         {/* HOW IT WORKS HEADER */}
         <div className="text-center mb-16 animate-fade-up">
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-            How to Convert Files for Free
+            How to Use Our PDF Tools
           </h2>
           <p className="text-slate-600 mt-4 text-lg">
-            Three simple steps to get your perfectly formatted document.
+            Three simple steps, free and without an account.
           </p>
         </div>
 

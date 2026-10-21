@@ -1,5 +1,9 @@
 "use client";
 
+import ErrorNotice from "@/components/tools/ErrorNotice";
+import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
+import { downloadBlob } from "@/lib/download";
+
 import { useState, useRef, useEffect } from "react";
 import {
     Upload,
@@ -17,6 +21,8 @@ export default function ToolClient() {
     const [images, setImages] = useState<string[]>([]);
     const [rotations, setRotations] = useState<number[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [progress, setProgress] = useState("");
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pdfjsRef = useRef<any>(null);
@@ -32,9 +38,20 @@ export default function ToolClient() {
     }, []);
 
     const handleFile = async (selectedFile: File) => {
-        if (!pdfjsRef.current) return;
-        if (selectedFile.type !== "application/pdf") {
-            alert("Please upload a valid PDF file.");
+        setError(null);
+        // The PDF reader loads in the background; wait for it instead of ignoring the file
+        let waited = 0;
+        while (!pdfjsRef.current && waited < 100) {
+            await new Promise((r) => setTimeout(r, 100));
+            waited++;
+        }
+        if (!pdfjsRef.current) {
+            setError("The PDF reader is still loading. Please try again in a moment.");
+            return;
+        }
+        const problem = await checkPdfFile(selectedFile);
+        if (problem) {
+            setError(problem);
             return;
         }
 
@@ -50,6 +67,7 @@ export default function ToolClient() {
                 const rots: number[] = [];
 
                 for (let i = 1; i <= pdf.numPages; i++) {
+                    setProgress(`Reading page ${i} of ${pdf.numPages}`);
                     const page = await pdf.getPage(i);
                     const viewport = page.getViewport({ scale: 1.5 });
                     const canvas = document.createElement("canvas");
@@ -65,11 +83,17 @@ export default function ToolClient() {
                 setImages(imgs);
                 setRotations(rots);
             } catch (err) {
-                alert("Error reading PDF. It may be password protected.");
+                setError(pdfErrorMessage(err));
                 setFile(null);
             } finally {
                 setLoading(false);
+                setProgress("");
             }
+        };
+        reader.onerror = () => {
+            setError("The file could not be read. Please choose it again.");
+            setFile(null);
+            setLoading(false);
         };
         reader.readAsArrayBuffer(selectedFile);
     };
@@ -118,14 +142,9 @@ export default function ToolClient() {
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `rotated_${file.name}`;
-            a.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, `rotated_${file.name}`);
         } catch (err) {
-            alert("Error rotating PDF.");
+            setError(`Could not rotate this PDF. ${pdfErrorMessage(err)}`);
         } finally {
             setLoading(false);
         }
@@ -151,8 +170,14 @@ export default function ToolClient() {
         }
     };
 
+    const retryPick = () => {
+        setError(null);
+        fileInputRef.current?.click();
+    };
+
     return (
         <div className="space-y-8">
+            <ErrorNotice message={error} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setError(null)} />
             {!file ? (
                 <div className="max-w-3xl mx-auto">
                     <div
@@ -180,7 +205,7 @@ export default function ToolClient() {
                             {loading ? (
                                 <>
                                     <RefreshCcw className="w-10 h-10 animate-spin text-[#0062cc]" />
-                                    <p className="text-xl font-medium text-slate-800">Processing PDF...</p>
+                                    <p className="text-xl font-medium text-slate-800">{progress || "Processing PDF..."}</p>
                                 </>
                             ) : (
                                 <>

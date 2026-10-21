@@ -84,16 +84,16 @@ const Header = () => {
 
           {/* Desktop Right Section */}
           <div className="hidden md:flex items-center gap-4">
-            <button className="px-5 py-2 cursor-pointer text-white bg-[#0066cc] rounded-md hover:bg-[#005bb5] transition font-medium">
-              Donate
-            </button>
+            <Link href="/tools" className="px-5 py-2 text-white bg-[#0066cc] rounded-md hover:bg-[#005bb5] transition font-medium">
+              All Tools
+            </Link>
           </div>
 
-          {/* Mobile Menu Toggle & Donate Button */}
+          {/* Mobile Menu Toggle & All Tools Button */}
           <div className="flex md:hidden items-center gap-3">
-            <button className="px-4 py-1.5 cursor-pointer text-white bg-[#0066cc] rounded-md hover:bg-[#005bb5] transition text-sm font-medium">
-              Donate
-            </button>
+            <Link href="/tools" onClick={closeMobileMenu} className="px-4 py-1.5 text-white bg-[#0066cc] rounded-md hover:bg-[#005bb5] transition text-sm font-medium">
+              All Tools
+            </Link>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="text-black p-1 focus:outline-none"

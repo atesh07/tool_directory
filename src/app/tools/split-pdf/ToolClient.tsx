@@ -1,5 +1,9 @@
 "use client";
 
+import ErrorNotice from "@/components/tools/ErrorNotice";
+import { checkPdfFile, pdfErrorMessage } from "@/lib/pdfFiles";
+import { downloadBlob } from "@/lib/download";
+
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
     Download,
@@ -50,6 +54,8 @@ export default function ToolClient() {
     const [rangeInput, setRangeInput] = useState("");
     const [chunkSize, setChunkSize] = useState(2);
     const [loading, setLoading] = useState(false);
+    const [notice, setNotice] = useState<string | null>(null);
+    const [progress, setProgress] = useState("");
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pdfjsRef = useRef<any>(null);
@@ -92,9 +98,20 @@ export default function ToolClient() {
     }, [groups]);
 
     const handleFile = async (selectedFile: File) => {
-        if (!pdfjsRef.current) return;
-        if (selectedFile.type !== "application/pdf") {
-            alert("Please upload a valid PDF file.");
+        setNotice(null);
+        // The PDF reader loads in the background; wait for it instead of ignoring the file
+        let waited = 0;
+        while (!pdfjsRef.current && waited < 100) {
+            await new Promise((r) => setTimeout(r, 100));
+            waited++;
+        }
+        if (!pdfjsRef.current) {
+            setNotice("The PDF reader is still loading. Please try again in a moment.");
+            return;
+        }
+        const problem = await checkPdfFile(selectedFile);
+        if (problem) {
+            setNotice(problem);
             return;
         }
 
@@ -109,6 +126,7 @@ export default function ToolClient() {
                 const imgs: string[] = [];
 
                 for (let i = 1; i <= pdf.numPages; i++) {
+                    setProgress(`Reading page ${i} of ${pdf.numPages}`);
                     const page = await pdf.getPage(i);
                     const viewport = page.getViewport({ scale: 0.6 });
                     const canvas = document.createElement("canvas");
@@ -123,22 +141,19 @@ export default function ToolClient() {
                 setImages(imgs);
                 setRangeInput(pdf.numPages > 1 ? `1-${Math.ceil(pdf.numPages / 2)}, ${Math.ceil(pdf.numPages / 2) + 1}-${pdf.numPages}` : "1");
             } catch (err) {
-                alert("Error reading PDF. It may be password protected.");
+                setNotice(pdfErrorMessage(err));
                 setFile(null);
             } finally {
                 setLoading(false);
+                setProgress("");
             }
         };
+        reader.onerror = () => {
+            setNotice("The file could not be read. Please choose it again.");
+            setFile(null);
+            setLoading(false);
+        };
         reader.readAsArrayBuffer(selectedFile);
-    };
-
-    const downloadBlob = (blob: Blob, name: string) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        a.click();
-        URL.revokeObjectURL(url);
     };
 
     const processAndDownload = async () => {
@@ -173,7 +188,7 @@ export default function ToolClient() {
                 downloadBlob(zipBlob, `${baseName}_split.zip`);
             }
         } catch (err) {
-            alert("Error splitting PDF.");
+            setNotice(`Could not split this PDF. ${pdfErrorMessage(err)}`);
         } finally {
             setLoading(false);
         }
@@ -211,8 +226,14 @@ export default function ToolClient() {
         </button>
     );
 
+    const retryPick = () => {
+        setNotice(null);
+        fileInputRef.current?.click();
+    };
+
     return (
         <div className="space-y-8">
+            <ErrorNotice message={notice} onRetry={retryPick} retryLabel="Choose another file" onDismiss={() => setNotice(null)} />
             {!file ? (
                 <div className="max-w-3xl mx-auto">
                     <div
@@ -240,7 +261,7 @@ export default function ToolClient() {
                             {loading ? (
                                 <>
                                     <RefreshCcw className="w-10 h-10 animate-spin text-[#0062cc]" />
-                                    <p className="text-xl font-medium text-slate-800">Processing PDF...</p>
+                                    <p className="text-xl font-medium text-slate-800">{progress || "Processing PDF..."}</p>
                                 </>
                             ) : (
                                 <>
