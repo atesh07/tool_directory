@@ -61,3 +61,5 @@ Check in Search Console after 6 to 8 weeks which of these groups get impressions
 | PDF watermark | pdf watermark adder, add watermark to pdf online | **Not covered.** The tool does not exist yet ("Watermark PDF" is in the coming-soon list). Build it first, then write the page |
 
 Not done on purpose: separate pages for 20 KB, 30 KB and 50 KB. They would repeat the same content. Look at Search Console first and only split a size out if it gets its own impressions.
+
+**Second list, same day:** 35 searches, nearly all repeats. The missing wordings (image compressor 100kb, jpg / jpeg compressor, reduce photo size to 100kb, resize image to 100kb online, image size 100 kb, photo resize in 30 kb, and others) were added to the tool keywords, and two FAQ entries cover "online JPG/JPEG compressor" and "reduce photo size online". Watermark PDF is still not built, so those two searches remain open.

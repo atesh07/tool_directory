@@ -845,6 +845,9 @@ export const TOOLS: Tool[] = [
       "reduce image size to 100kb", "resize photo to 100kb", "compress image to 100kb", "image resizer in 100 kb", "photo resizer 100kb jpg",
       "compress jpg to 100kb", "compress png to 100kb", "resize jpeg to 100kb", "photo resize to 50kb", "photo resize to 30kb", "photo resize to 20kb",
       "image size reducer", "online image kb reducer", "image compressor in kb", "photo compressor online", "passport photo resize 100kb", "signature resize to 100kb",
+      "image resizer in 100 kb", "image resize in 100 kb", "image size 100 kb", "photo resizer in 100 kb", "photo resize in 30 kb", "compress photo to 100kb",
+      "reduce photo size to 100kb", "reduce image size online", "resize image to 100kb online", "image resizer online", "image compressor 100kb",
+      "jpg compressor to 100kb", "jpeg compressor 100kb", "resize jpg to 100kb", "image size reducer to 100kb", "image resizer in 50kb", "image resizer in 20kb",
     ],
     intro: "Reduce a photo or signature to under 100 KB (or 20, 30, 50, 200 KB) for forms, portals and email, without uploading it.",
     heading: ["Resize & Compress Image to", "100KB"],
@@ -907,6 +910,8 @@ export const TOOLS: Tool[] = [
     faq: [
       { q: "How do I reduce image size to 100 KB?", a: "Choose your photo, keep 100 KB selected and press the button. The tool lowers the quality and, if needed, the pixel size until the file is under 100 KB, then you download it." },
       { q: "How do I resize a photo to 50 KB, 30 KB or 20 KB?", a: "Tap 50, 30 or 20 KB (or type the number under Other) and press the button. Smaller sizes lower the quality more, and large photos also shrink in pixels, so a plain background and a closer crop give a clearer result." },
+      { q: "Is there an online JPG or JPEG compressor to 100 KB?", a: "Yes, this is it. Choose your JPG or JPEG, keep 100 KB selected and press the button. It works online in your browser, so there is nothing to install and the photo is not uploaded." },
+      { q: "How do I reduce photo size online without losing quality?", a: "Some quality loss is unavoidable when a file gets smaller, but this tool keeps the highest quality that still fits your limit and only makes the picture smaller in pixels if it has to." },
       { q: "Can I compress a PNG to 100 KB?", a: "Yes. The PNG is converted to a JPG, which is much smaller for photos, and the result is under your size. Transparent areas become white. If the PNG is already under the limit, it is returned unchanged." },
       { q: "What is the difference between resizing and compressing an image?", a: "Resizing changes the width and height in pixels. Compressing lowers the quality to save space. To reach a size in KB both are used, and this tool uses the least of each that is needed." },
       { q: "Does the quality drop?", a: "A little, because a smaller file has to hold less detail. The tool keeps the highest quality that still fits your limit, so it does not shrink more than needed." },
