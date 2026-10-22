@@ -1,9 +1,13 @@
+import { WEB_GUIDES } from "./guides-web";
+
 export type Block =
   | { t: "h2"; text: string }
   | { t: "p"; text: string }
   | { t: "ul"; items: string[] }
   | { t: "ol"; items: string[] }
-  | { t: "tip"; text: string };
+  | { t: "tip"; text: string }
+  | { t: "code"; label: string; text: string }
+  | { t: "table"; head: string[]; rows: string[][] };
 
 export type Guide = {
   slug: string;
@@ -492,6 +496,7 @@ export const GUIDES: Guide[] = [
       },
     ],
   },
+  ...WEB_GUIDES,
 ];
 
 export const HI_GUIDES: Guide[] = [

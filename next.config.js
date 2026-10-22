@@ -10,6 +10,10 @@ const siteUrl =
 const nextConfig = {
   env: { NEXT_PUBLIC_SITE_URL: siteUrl },
   poweredByHeader: false,
+  // Short address people may type: send it to the tool page
+  async redirects() {
+    return [{ source: "/resize-image-under-100kb", destination: "/tools/resize-image-under-100kb", permanent: true }];
+  },
   webpack: (config) => {
     config.resolve.alias.canvas = false;
     return config;

@@ -81,6 +81,38 @@ export default function GuideArticle({ guide }: { guide: Guide }) {
                   {b.items.map((it) => <li key={it.slice(0, 50)}>{it}</li>)}
                 </ol>
               );
+            if (b.t === "code")
+              return (
+                <figure key={i} className="min-w-0">
+                  <figcaption className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{b.label}</figcaption>
+                  <pre tabIndex={0} aria-label={b.label} className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm leading-relaxed text-slate-100">
+                    <code>{b.text}</code>
+                  </pre>
+                </figure>
+              );
+            if (b.t === "table")
+              return (
+                <div key={i} tabIndex={0} role="region" aria-label="Table" className="min-w-0 overflow-x-auto rounded-lg border border-slate-200">
+                  <table className="w-full min-w-[420px] text-left text-sm">
+                    <thead className="bg-slate-50 text-slate-900">
+                      <tr>
+                        {b.head.map((h) => (
+                          <th key={h} scope="col" className="px-3 py-2 font-semibold">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {b.rows.map((row) => (
+                        <tr key={row[0]} className="border-t border-slate-200 align-top">
+                          {row.map((cell, c) => (
+                            c === 0 ? <th key={c} scope="row" className="px-3 py-2 font-mono text-[13px] font-semibold text-slate-900">{cell}</th> : <td key={c} className="px-3 py-2">{cell}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
             return (
               <p key={i} className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
                 <Lightbulb className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />

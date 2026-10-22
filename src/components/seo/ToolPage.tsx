@@ -45,7 +45,7 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
         </h1>
         <p className="text-slate-500 text-lg max-w-2xl mx-auto">{tool.intro}</p>
         <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-slate-500">
-          <Lock className="w-4 h-4" aria-hidden="true" /> Free, no sign-up. Your files never leave your browser.
+          <Lock className="w-4 h-4" aria-hidden="true" /> Free, no sign-up. Everything runs in your browser.
         </p>
       </header>
 
@@ -111,6 +111,36 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
             </div>
           ))}
         </dl>
+        {tool.reference && (
+          <div className="mt-10">
+            <h3 className="mb-2 text-lg font-semibold text-slate-900">{tool.reference.heading}</h3>
+            <p className="mb-3 text-sm text-slate-600">{tool.reference.intro}</p>
+            <div tabIndex={0} role="region" aria-label={tool.reference.heading} className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+              <table className="w-full min-w-[360px] text-left text-sm">
+                <thead className="bg-slate-50 text-slate-900">
+                  <tr>
+                    {tool.reference.head.map((h) => (
+                      <th key={h} scope="col" className="px-3 py-2 font-semibold">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {tool.reference.rows.map((row) => (
+                    <tr key={row[0]} className="border-t border-slate-200">
+                      {row.map((cell, c) =>
+                        c === 0 ? (
+                          <th key={c} scope="row" className="px-3 py-2 font-mono text-[13px] font-semibold text-slate-900">{cell}</th>
+                        ) : (
+                          <td key={c} className="px-3 py-2 text-slate-700">{cell}</td>
+                        ),
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
         <h3 className="mt-8 mb-3 text-lg font-semibold text-slate-900">Good to know</h3>
         <ul className="list-disc space-y-2 pl-5 text-slate-700">
           {tool.limits.map((l) => (
@@ -155,6 +185,7 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
       </section>
 
       {/* What to do next: links written as sentences, not just a grid */}
+      {(tool.next.length > 0 || guides.length > 0) && (
       <section className="max-w-3xl mx-auto px-4 w-full pb-8" aria-labelledby="next">
         <h2 id="next" className="text-2xl font-bold text-slate-900 mb-4">
           What to do next
@@ -190,11 +221,12 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
           </div>
         )}
       </section>
+      )}
 
       {/* Related tools */}
       <section className="max-w-5xl mx-auto px-4 w-full pb-16" aria-labelledby="more">
         <h2 id="more" className="text-2xl font-bold text-slate-900 text-center mb-8">
-          More free PDF tools
+          More free tools
         </h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...related, ...others].slice(0, 6).map((t) => {

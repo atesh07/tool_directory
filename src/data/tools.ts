@@ -1,17 +1,21 @@
 import {
+  Binary,
+  Braces,
   Combine,
   FileImage,
   FileText,
   FilePlus,
+  Link2,
   Pencil,
   RotateCw,
   Scissors,
+  Shrink,
   type LucideIcon,
 } from "lucide-react";
 
 export type Faq = { q: string; a: string };
 
-export type CategoryId = "organize" | "to-pdf" | "from-pdf";
+export type CategoryId = "organize" | "to-pdf" | "from-pdf" | "images" | "web";
 
 export type Tool = {
   slug: string;
@@ -42,6 +46,8 @@ export type Tool = {
   /** Guides (slugs from data/guides.ts) shown on this page */
   guides: string[];
   related: string[];
+  /** Optional lookup table shown after the specs (for example a list of codes) */
+  reference?: { heading: string; intro: string; head: string[]; rows: string[][] };
   /** Wider tool area for editors */
   wide?: boolean;
 };
@@ -71,6 +77,16 @@ export const CATEGORIES: { id: CategoryId; name: string; description: string }[]
     id: "from-pdf",
     name: "Convert from PDF",
     description: "Turn PDF pages into pictures for slides, posts and websites.",
+  },
+  {
+    id: "images",
+    name: "Image tools",
+    description: "Make photos smaller so they fit the upload limits of forms, portals and email.",
+  },
+  {
+    id: "web",
+    name: "Web and text tools",
+    description: "Small everyday helpers for links, text and web work. They run in your browser too.",
   },
 ];
 
@@ -464,6 +480,7 @@ export const TOOLS: Tool[] = [
       { slug: "merge-pdf", text: "Want to combine this PDF with other documents? Use Merge PDF." },
       { slug: "rotate-pdf", text: "If a page needs turning, use Rotate PDF." },
       { slug: "pdf-to-image", text: "Need to go the other way, from PDF to pictures? Use PDF to Image." },
+      { slug: "resize-image-under-100kb", text: "Photos too big and making the PDF heavy? Make them smaller first with Resize & Compress Image to 100KB." },
     ],
     guides: ["photos-to-pdf-on-your-phone"],
     related: ["merge-pdf", "rotate-pdf", "pdf-to-image"],
@@ -527,6 +544,7 @@ export const TOOLS: Tool[] = [
       { slug: "split-pdf", text: "To convert only a few pages, extract them first with Split PDF." },
       { slug: "image-to-pdf", text: "To turn pictures back into a PDF, use Image to PDF." },
       { slug: "edit-pdf", text: "Want to change text on the page before saving it as an image? Use Edit PDF." },
+      { slug: "resize-image-under-100kb", text: "Need the saved picture under a size limit, such as 100 KB? Use Resize & Compress Image to 100KB." },
     ],
     guides: ["pdf-to-jpg-quality-and-size"],
     related: ["split-pdf", "image-to-pdf", "edit-pdf"],
@@ -596,6 +614,318 @@ export const TOOLS: Tool[] = [
     ],
     guides: ["word-to-pdf-what-changes"],
     related: ["merge-pdf", "image-to-pdf", "edit-pdf"],
+  },
+  {
+    slug: "url-encoder-decoder",
+    name: "URL Encoder & Decoder",
+    category: "web",
+    title: "URL Decode & Encode Online Free",
+    description:
+      "Decode or encode a URL online: query strings, %20 %22 %25 %2B %40 codes, JSON and Hindi text. Shows each parameter. Free, instant, nothing is uploaded.",
+    keywords: [
+      "url decoder", "url encoder", "decode url online", "encoded url online", "decode url string", "decode url params",
+      "url encoded query string", "url encoded value", "url encoded example", "url encoded json", "url encoded base64",
+      "decode url characters", "decode facebook url", "decode youtube url", "percent encoding", "encodeURIComponent online",
+    ],
+    intro: "Decode an encoded URL into readable text, or encode text so it is safe inside a link. Query parameters are listed for you.",
+    heading: ["URL Encoder &", "Decoder"],
+    icon: Link2,
+    wide: false,
+    steps: [
+      { title: "Paste your text or link", text: "Type or paste into the box. The result appears as you type, so there is no button to press." },
+      { title: "Choose Encode or Decode", text: "Decode turns codes like %20, %22 and %2B back into normal text, and lists the parameters of a link. Encode does the reverse." },
+      { title: "Copy the result", text: "Press Copy, or Swap to move the result into the input and convert it the other way." },
+    ],
+    about: [
+      "A web address can only contain a small set of characters. Spaces, accents, Hindi letters, emoji and symbols such as &, ? and # must be written as a percent sign followed by two hex digits, for example a space becomes %20. This is called URL encoding or percent-encoding.",
+      "This tool does that in your browser using the same functions websites use (encodeURIComponent and encodeURI). Choose Component to encode a single value, such as a search word or a query parameter. Choose Full URL to encode a whole address while keeping its : / ? & = # characters in place.",
+      "Decoding reverses the process. If the link has a query string (the part after the ?), a table lists every parameter with its decoded value, which is the quickest way to read long links from Facebook, YouTube or an API. If the result still has % codes in it, the text was encoded twice and Decode again removes the second layer. A broken % code is reported instead of showing garbage, and nothing you type is sent anywhere.",
+      "Looking for code instead of a web page? The guide on URL encoding in JavaScript, PHP, Java, Python and more shows the exact function for each language, and the list of URL encoded characters explains codes such as %22, %25, %2B and %40.",
+    ],
+    useCases: [
+      "Put a search phrase or name with spaces into a link or query string",
+      "Read a long link full of %20 and %2F codes",
+      "Check what a tracking or redirect link really contains",
+      "Prepare Hindi, Urdu or emoji text so it works in a URL",
+      "Read the real address inside a long Facebook or YouTube redirect link",
+      "Open up URL encoded JSON or a form body (name=value&name=value) to read it",
+      "Check what encodeURIComponent, urlencode or quote would give, without writing code",
+    ],
+    specs: [
+      { label: "Works with", value: "Any text, including Hindi and other languages, and emoji" },
+      { label: "Modes", value: "Encode or decode; Component (single value) or Full URL" },
+      { label: "Spaces", value: "%20 by default; optional + for form-style data" },
+      { label: "Parameters", value: "A table of names and decoded values appears when the link has a query string" },
+      { label: "Size", value: "Limited only by what your browser can handle" },
+      { label: "Where it runs", value: "In your browser. Nothing is uploaded." },
+    ],
+    reference: {
+      heading: "Common URL encoded characters",
+      intro: "The codes people look up most. Paste any of them into the box above with Decode selected to check.",
+      head: ["Code", "Character", "Notes"],
+      rows: [
+        ["%20", "space", "Written + in form data"],
+        ["%22", "double quote \"", "Seen in URL encoded JSON"],
+        ["%25", "percent sign %", "%2520 means encoded twice"],
+        ["%2B", "plus sign +", "A bare + means a space in a query string"],
+        ["%40", "at sign @", "In email addresses inside links"],
+        ["%26", "ampersand &", "Separates parameters"],
+        ["%3D", "equals sign =", "Separates a name from its value"],
+        ["%3F", "question mark ?", "Starts the query string"],
+        ["%23", "hash #", "Starts the fragment"],
+        ["%2F", "slash /", "Separates parts of a path"],
+        ["%3A", "colon :", "As in https%3A%2F%2F"],
+        ["%0A", "new line (LF)", "Windows text uses %0D%0A"],
+      ],
+    },
+    limits: [
+      "Encoding is not encryption. Anyone can decode a URL-encoded value, so do not use it to hide secrets.",
+      "Full URL mode keeps characters like ? & = # as they are, so it will not fix a value that itself contains them. Use Component for single values.",
+      "Text is converted as UTF-8, which is what modern websites expect. Old pages that use other encodings may decode differently.",
+    ],
+    troubleshooting: [
+      { problem: "It says the text is not valid", fix: "A % must be followed by two hex digits (0 to 9, A to F). Look for a stray % in the text, or a link that was cut off in the middle of a code." },
+      { problem: "My link stopped working after encoding", fix: "You probably used Component on a whole URL, which also encodes the : and /. Use Full URL for a whole address." },
+      { problem: "I see + instead of spaces", fix: "Turn on the plus option when decoding form data, where + stands for a space." },
+      { problem: "Decoded text shows odd symbols", fix: "The original was probably not UTF-8. Try a different source, or decode part of it at a time." },
+      { problem: "The result still has %25 or %20 in it", fix: "The text was encoded twice. Press Decode again to remove the second layer." },
+      { problem: "A plus sign turned into a space", fix: "In a query string a bare + means a space. To keep a real plus it must be written %2B. Turn the plus option off when decoding something that is not form data." },
+    ],
+    faq: [
+      { q: "How do I decode a URL?", a: "Paste the link or text into the box, choose Decode, and read the result. If the link has a query string, each parameter is listed with its decoded value." },
+      { q: "What is URL encoding?", a: "It is a way to write special characters in a link as a % sign and two hex digits, so the link is understood everywhere. A space becomes %20." },
+      { q: "What do %22, %25, %2B and %40 mean?", a: "%22 is a double quote, %25 is a percent sign, %2B is a plus sign and %40 is an at sign (@). The table above lists the other common codes." },
+      { q: "What is the difference between Component and Full URL?", a: "Component encodes everything unsafe, including : / ? & = and #, so use it for one value. Full URL leaves those characters alone, so use it for a whole address. When decoding, Component decodes every code; Full URL leaves %2F, %3F, %26 and similar codes as they are." },
+      { q: "Why do I see %2520 in my link?", a: "The text was encoded twice: the % of %20 became %25. Decode once to get %20, then press Decode again for the space." },
+      { q: "How do I decode a URL in JavaScript, PHP, Java or Python?", a: "JavaScript uses decodeURIComponent, PHP uses rawurldecode or urldecode, Java uses URLDecoder.decode with UTF-8 and Python uses urllib.parse.unquote. Our guide has copy-ready code for these and for C#, Ruby, Rust and Dart." },
+      { q: "What is a URL encoded body or query string?", a: "It is data written as name=value pairs joined with &, with special characters encoded. In a link it comes after the ?, and in a form post it is the request body." },
+      { q: "How is a newline or a double quote URL encoded?", a: "A new line is %0A (Windows text uses %0D%0A) and a double quote is %22." },
+      { q: "Is a dot URL encoded?", a: "No, a dot is always safe and stays as it is. If you see %2E, it decodes to a dot." },
+      { q: "Can I decode a Facebook or YouTube link?", a: "Yes. Paste the whole link and choose Decode. The real address is inside a parameter, such as u on Facebook or q on YouTube redirect links. Decoding shows the address but does not tell you whether the site is safe." },
+      { q: "How do I handle URL encoded JSON or Base64?", a: "URL decode it here first. For JSON, paste the result into the JSON Formatter. For Base64, paste it into the Base64 Encoder & Decoder. A + inside Base64 may have turned into a space in the link and should be put back as +." },
+      { q: "Is this URL decoder free, and is my text sent anywhere?", a: "It is free with no sign-up. The conversion runs in your browser, so links and text with private information stay on your device." },
+      { q: "Is URL encoding the same as encryption?", a: "No. Anyone can decode it. It only makes text safe to put inside a link." },
+    ],
+    next: [
+      { slug: "base64-encoder-decoder", text: "Found a Base64 value inside the link? Read it with the Base64 Encoder & Decoder." },
+      { slug: "json-formatter", text: "Decoded URL encoded JSON? Make it readable with the JSON Formatter & Validator." },
+    ],
+    guides: ["url-encoding-explained-with-examples", "url-encoded-characters-list", "url-encode-decode-in-javascript-php-java-python", "decode-facebook-and-youtube-links"],
+    related: ["base64-encoder-decoder", "json-formatter"],
+  },
+  {
+    slug: "base64-encoder-decoder",
+    name: "Base64 Encoder & Decoder",
+    category: "web",
+    title: "Base64 Encoder & Decoder Online Free",
+    description:
+      "Encode text or a file to Base64, or decode Base64 back to text. Supports Hindi and emoji, and URL-safe Base64. Free, instant, and nothing is uploaded.",
+    keywords: ["base64 encode", "base64 decode", "base64 encoder decoder online", "text to base64", "file to base64", "url safe base64"],
+    intro: "Turn text or a small file into Base64, or turn Base64 back into readable text.",
+    heading: ["Base64 Encoder &", "Decoder"],
+    icon: Binary,
+    steps: [
+      { title: "Paste text or choose a file", text: "Type or paste into the box. To encode a file instead, press Choose file." },
+      { title: "Choose Encode or Decode", text: "Encode makes Base64 from your text. Decode reads Base64 and shows the text inside it." },
+      { title: "Copy the result", text: "Press Copy result, or Swap to send the result back into the input and convert the other way." },
+    ],
+    about: [
+      "Base64 is a way to write any data using only letters, numbers, + and /. It is used to put small files and text inside emails, web pages, JSON and configuration files, where raw bytes would break things. The result is about one third longer than the original.",
+      "This tool converts text as UTF-8, so Hindi, accented letters and emoji come out right and decode back correctly. You can also pick the URL-safe form, which uses - and _ instead of + and /, and leaves off the = padding, for use inside links and tokens.",
+      "Everything happens in your browser. Your text and files are not sent anywhere. Base64 is only a way of writing data, not a way of hiding it: anyone can decode it.",
+    ],
+    useCases: [
+      "Read what is inside a Base64 string from an API, email or config file",
+      "Prepare text or a small image to put inside JSON or HTML",
+      "Convert text with Hindi or emoji without it turning into garbage",
+      "Make a URL-safe Base64 value for a link or token",
+    ],
+    specs: [
+      { label: "Works with", value: "Any text, including Hindi and emoji, and small files for encoding" },
+      { label: "Modes", value: "Encode or decode; standard or URL-safe Base64" },
+      { label: "Largest file", value: "1 MB (encoding only)" },
+      { label: "Decoding", value: "Shows the result as text; spaces and line breaks inside the Base64 are ignored" },
+      { label: "Where it runs", value: "In your browser. Nothing is uploaded." },
+    ],
+    limits: [
+      "Base64 is not encryption. Anyone can decode it, so never use it to protect a password or secret.",
+      "Decoding shows text only. If the Base64 holds a picture or another binary file, the tool says so instead of showing broken characters.",
+      "File encoding is limited to 1 MB so the page stays fast, and the result is about a third larger than the file.",
+    ],
+    troubleshooting: [
+      { problem: "It says the text is not valid Base64", fix: "Base64 uses only letters, numbers, + / and = (or - and _ in the URL-safe form). Check for a missing or extra character, or a copy that was cut off." },
+      { problem: "It says the result is not text", fix: "The Base64 holds a file or other binary data, not text, so it cannot be shown here." },
+      { problem: "Decoded Hindi or emoji looks wrong", fix: "The original text may not have been UTF-8 when it was encoded. Encode it again here and use that value." },
+      { problem: "My Base64 has - and _ in it", fix: "That is the URL-safe form. Turn on the URL-safe option before decoding." },
+    ],
+    faq: [
+      { q: "What is Base64?", a: "A way to write data using only 64 safe characters (A to Z, a to z, 0 to 9, + and /). It lets text and files travel safely through systems that only accept plain text." },
+      { q: "Is Base64 encryption?", a: "No. It only changes how data is written. Anyone can decode it, so it gives no protection." },
+      { q: "Does it work with Hindi and emoji?", a: "Yes. Text is converted as UTF-8, so Hindi, other languages and emoji encode and decode correctly." },
+      { q: "What is URL-safe Base64?", a: "A variant that uses - and _ instead of + and / and drops the = padding, so the value can sit inside a link without extra encoding." },
+      { q: "Is my data sent to a server?", a: "No. Encoding and decoding run in your browser, so text and files stay on your device." },
+      { q: "Is this Base64 tool free?", a: "Yes, free with no sign-up." },
+    ],
+    next: [
+      { slug: "url-encoder-decoder", text: "Putting a value into a link? Make it link-safe with the URL Encoder & Decoder." },
+    ],
+    guides: ["url-encoding-explained-with-examples"],
+    related: ["url-encoder-decoder", "json-formatter"],
+  },
+  {
+    slug: "json-formatter",
+    name: "JSON Formatter & Validator",
+    category: "web",
+    title: "JSON Formatter & Validator Online Free",
+    description:
+      "Format, beautify, minify and validate JSON online. Shows the exact line and column of an error. Free, instant, and your data never leaves your browser.",
+    keywords: ["json formatter", "json validator", "json beautifier", "format json online", "minify json", "json pretty print"],
+    intro: "Paste JSON to make it readable, shrink it, or find the exact spot where it is broken.",
+    heading: ["JSON Formatter &", "Validator"],
+    icon: Braces,
+    steps: [
+      { title: "Paste your JSON", text: "Paste or type into the box. It is checked as you type, so you see right away whether it is valid." },
+      { title: "Choose how to show it", text: "Format adds line breaks and indents. Minify removes all extra space. You can pick 2 spaces, 4 spaces or tabs, and sort the keys." },
+      { title: "Copy or download", text: "Press Copy result or Download to save it as a .json file. If the JSON is broken, the message shows the line and column." },
+    ],
+    about: [
+      "JSON is the text format used by most websites, apps and APIs to send data. It is easy for computers to read but hard for people when it is squeezed onto one line. This tool lays it out with indents so you can read it, or squeezes it into the smallest size for sending.",
+      "It also checks that your JSON is valid. When something is wrong, such as a missing comma, a trailing comma or single quotes instead of double quotes, it tells you the line and column and shows the line, so you can fix it quickly.",
+      "Everything runs in your browser using its built-in JSON support. Your data is not uploaded, which is why it is safe to use with private API responses and config files.",
+    ],
+    useCases: [
+      "Read an API response that arrives as one long line",
+      "Find the missing comma or quote that breaks a config file",
+      "Shrink JSON before putting it in a request or a file",
+      "Sort the keys so two JSON files are easy to compare",
+    ],
+    specs: [
+      { label: "Works with", value: "Any JSON text: objects, arrays, strings, numbers, true, false and null" },
+      { label: "Actions", value: "Format, minify, validate; sort keys; 2 spaces, 4 spaces or tabs" },
+      { label: "Largest input", value: "2 MB (about 2 million characters)" },
+      { label: "Errors", value: "Shows the line, column and the line of text where the problem is" },
+      { label: "Where it runs", value: "In your browser. Nothing is uploaded." },
+    ],
+    limits: [
+      "Only strict JSON is accepted. Comments, trailing commas, single quotes and unquoted keys are errors, as in most programs.",
+      "Whole numbers larger than 9007199254740991 can lose their last digits, because browsers read numbers as doubles. Keep big IDs as strings.",
+      "If a key appears twice in the same object, only the last one is kept.",
+      "Inputs over 2 MB are refused, because showing very long text makes the page slow.",
+    ],
+    troubleshooting: [
+      { problem: "It says unexpected token or unexpected character", fix: "Look at the line and column shown. The cause is usually just before it: a missing comma, an extra comma at the end, or a missing quote." },
+      { problem: "My JSON uses single quotes", fix: "JSON requires double quotes around keys and text. Replace the single quotes with double quotes." },
+      { problem: "It fails on comments", fix: "JSON does not allow comments. Remove the // and /* */ parts." },
+      { problem: "A long number changed", fix: "Numbers above 9007199254740991 lose precision in browsers. Put such IDs inside quotes so they stay exact." },
+      { problem: "It says the input is empty", fix: "Paste some JSON into the box. Whitespace alone is not valid JSON." },
+    ],
+    faq: [
+      { q: "What is a JSON formatter?", a: "A tool that adds line breaks and indents to JSON so a person can read it. It is also called a JSON beautifier or pretty printer." },
+      { q: "How do I validate JSON?", a: "Paste it in. If it is valid you see a green message, and if not you see the line and column of the first error." },
+      { q: "Is my JSON uploaded anywhere?", a: "No. It is read and formatted in your browser, so API responses and config files stay on your device." },
+      { q: "What does minify do?", a: "It removes all spaces and line breaks, giving the smallest text with the same data. It is useful before sending JSON or storing it." },
+      { q: "Why do I get an error for a trailing comma?", a: "Strict JSON does not allow a comma after the last item. Delete it and the JSON will be valid." },
+      { q: "Is this JSON formatter free?", a: "Yes, free with no sign-up." },
+    ],
+    next: [
+      { slug: "base64-encoder-decoder", text: "Need to put JSON inside a token or another text field? Encode it with the Base64 Encoder & Decoder." },
+      { slug: "url-encoder-decoder", text: "Sending JSON in a link? Make it safe with the URL Encoder & Decoder." },
+    ],
+    guides: ["url-encoding-explained-with-examples"],
+    related: ["base64-encoder-decoder", "url-encoder-decoder"],
+  },
+  {
+    slug: "resize-image-under-100kb",
+    name: "Resize Image Under 100KB",
+    category: "images",
+    title: "Resize & Compress Image to 100KB Free",
+    description:
+      "Resize or compress a JPG, PNG or WebP photo to 100 KB, or 20, 30, 50 KB, online. Works for photos and signatures. Free, and your picture never leaves your device.",
+    keywords: [
+      "reduce image size to 100kb", "resize photo to 100kb", "compress image to 100kb", "image resizer in 100 kb", "photo resizer 100kb jpg",
+      "compress jpg to 100kb", "compress png to 100kb", "resize jpeg to 100kb", "photo resize to 50kb", "photo resize to 30kb", "photo resize to 20kb",
+      "image size reducer", "online image kb reducer", "image compressor in kb", "photo compressor online", "passport photo resize 100kb", "signature resize to 100kb",
+    ],
+    intro: "Reduce a photo or signature to under 100 KB (or 20, 30, 50, 200 KB) for forms, portals and email, without uploading it.",
+    heading: ["Resize & Compress Image to", "100KB"],
+    icon: Shrink,
+    steps: [
+      { title: "Choose your photos", text: "Pick one or more JPG, PNG or WebP images. On a phone you can choose from the gallery or take a new photo." },
+      { title: "Set the size", text: "100 KB is already selected. Tap 20, 30, 50 or 200 KB, or type your own number. You can also limit the width and height." },
+      { title: "Resize and download", text: "Press the button. Each photo shows its new size, and you can download it, or all of them as one ZIP." },
+    ],
+    about: [
+      "Many online forms and portals refuse a photo that is larger than a certain size, often 50 KB, 100 KB or 200 KB. This tool makes your picture smaller than the size you choose, so the upload goes through.",
+      "It tries the best quality first. If the file is still too big, it lowers the quality a little at a time, and if that is not enough it makes the picture slightly smaller in pixels. It stops at the highest quality that fits, so the result is just under your limit, not far below it. Everything happens in your browser, so the photo is not uploaded anywhere.",
+      "People call this by many names: image resizer, image compressor, photo size reducer, KB reducer. They all mean the same job here: make the file smaller in KB. The tool does both things that change file size, it lowers the JPG quality and, only if needed, the picture size in pixels. PNG and WebP images are converted to JPG, so a PNG ends up as a JPG under your size.",
+      "The result is always a JPG, because JPG gives the smallest file for photos. A PNG with a see-through background gets a white background. Flat graphics, screenshots and text can look slightly soft at very small sizes; a photo of a face or a signature on white paper usually looks fine at 50 KB or more.",
+    ],
+    useCases: [
+      "Upload a passport-size photo or signature to a form that has a size limit",
+      "Attach pictures to an email or a job application that rejects big files",
+      "Make a profile picture small enough for a website or app",
+      "Reduce a passport-style photo or a scanned signature to the size an application form asks for",
+      "Shrink phone photos before sharing so they send faster on a slow connection",
+    ],
+    specs: [
+      { label: "Works with", value: "JPG, PNG and WebP images" },
+      { label: "Not supported", value: "HEIC or HEIF photos from iPhones (save or share them as JPG first), GIF, and PDF" },
+      { label: "Target sizes", value: "20, 30, 50, 100 and 200 KB, or any size from 10 to 2000 KB" },
+      { label: "Size count", value: "The result is under your number whether a form counts 1 KB as 1000 or 1024 bytes" },
+      { label: "Largest photo", value: "30 MB each, up to 20 photos at a time" },
+      { label: "Result", value: "A JPG. A transparent PNG gets a white background. A photo that is already under your limit is returned unchanged" },
+      { label: "Where it runs", value: "In your browser. Nothing is uploaded." },
+    ],
+    reference: {
+      heading: "Which size should I choose?",
+      intro: "Use the size your form or website asks for. If it does not say, this is a starting point.",
+      head: ["Size", "Often used for", "What to expect"],
+      rows: [
+        ["20 KB", "Signatures and small thumbnails", "Very small. Photos lose a lot of detail, and large photos shrink in pixels"],
+        ["30 KB", "Small profile pictures and ID-style photos", "Fine for a face at small size; fine print becomes soft"],
+        ["50 KB", "Passport-style photos, signatures, small attachments", "Good for a face and a signature; keep the background plain"],
+        ["100 KB", "Photos for forms and job portals, profile pictures", "Clear for most photos at normal screen size"],
+        ["200 KB", "Larger attachments, photos with more detail", "Close to the original for web use"],
+      ],
+    },
+    limits: [
+      "Very small targets on large photos force the picture to become smaller in pixels. If a form also needs exact pixel sizes, set the maximum width and height here.",
+      "The result is just under your target, but it is not guaranteed to be exactly that size. Some portals want an exact range, for example between 20 and 50 KB; check the result before you upload.",
+      "A signature or photo with a plain white or light background compresses best. A busy background uses up the size limit and leaves less room for the face.",
+      "Quality always drops when a photo is made much smaller. Compare the preview with the original before you submit it.",
+      "Only the picture is kept. Information stored in the photo, such as the camera and location, is removed.",
+    ],
+    troubleshooting: [
+      { problem: "It says the photo cannot be made small enough", fix: "Untick Keep original dimensions, or choose a larger size such as 200 KB. Photos that are mostly fine detail need more room." },
+      { problem: "It does not accept my iPhone photo", fix: "HEIC photos are not supported. On iPhone, share the picture and choose JPG or Most Compatible, or take a screenshot of it, then try again." },
+      { problem: "The picture looks blurry", fix: "The size limit forced a small file. Try a larger target, or crop the photo to the part you need before using it." },
+      { problem: "The form still says the file is too big", fix: "Check what the form counts. Choose a smaller target, for example 90 KB instead of 100 KB, and try again." },
+      { problem: "The background of my PNG turned white", fix: "JPG cannot be transparent. Use the PNG itself if it already meets the limit." },
+      { problem: "The form wants a file bigger than a minimum size (for example at least 20 KB)", fix: "This tool makes the file smaller, not bigger. Choose a target a little above the minimum, then check the size shown before you upload." },
+      { problem: "My signature looks pale or broken at 20 KB", fix: "Photograph it on white paper in good light with a dark pen, crop close to the signature, and set a maximum width of about 400 pixels before you resize." },
+    ],
+    faq: [
+      { q: "How do I reduce image size to 100 KB?", a: "Choose your photo, keep 100 KB selected and press the button. The tool lowers the quality and, if needed, the pixel size until the file is under 100 KB, then you download it." },
+      { q: "How do I resize a photo to 50 KB, 30 KB or 20 KB?", a: "Tap 50, 30 or 20 KB (or type the number under Other) and press the button. Smaller sizes lower the quality more, and large photos also shrink in pixels, so a plain background and a closer crop give a clearer result." },
+      { q: "Can I compress a PNG to 100 KB?", a: "Yes. The PNG is converted to a JPG, which is much smaller for photos, and the result is under your size. Transparent areas become white. If the PNG is already under the limit, it is returned unchanged." },
+      { q: "What is the difference between resizing and compressing an image?", a: "Resizing changes the width and height in pixels. Compressing lowers the quality to save space. To reach a size in KB both are used, and this tool uses the least of each that is needed." },
+      { q: "Does the quality drop?", a: "A little, because a smaller file has to hold less detail. The tool keeps the highest quality that still fits your limit, so it does not shrink more than needed." },
+      { q: "Can I resize my passport photo or signature to 100 KB?", a: "Yes. Choose 100 KB (or the size your form asks for), and set a maximum width and height if the form also lists pixel sizes. Check the form's own rules for size, format and background before you upload." },
+      { q: "Is my photo uploaded?", a: "No. The photo is read and compressed in your browser, so private pictures such as ID photos stay on your device." },
+      { q: "Can I make an image exactly 100 KB?", a: "The result is just under the size you choose, usually within a few KB of it, not exactly that number. If a form needs a range, check the size shown and adjust the target." },
+      { q: "Is 100 KB the same as 100,000 or 102,400 bytes?", a: "Programs differ. This tool keeps the result under 100,000 bytes, so it is under 100 KB by either count." },
+      { q: "Can I set the width and height?", a: "Yes. Fill in the maximum width and height, and the picture is made to fit inside them while keeping its shape. It is never stretched." },
+      { q: "Can I resize many photos at once?", a: "Yes, up to 20 at a time. Download each one, or all of them together as a ZIP." },
+      { q: "Which formats work?", a: "JPG, JPEG, PNG and WebP go in, and a JPG comes out. HEIC photos from iPhones are not supported yet." },
+      { q: "Does it work on a phone?", a: "Yes. Choose the photo from your gallery or take a new one, resize it, and download the result. Nothing needs to be installed." },
+      { q: "Is it free?", a: "Yes, free with no sign-up and no watermark." },
+    ],
+    next: [
+      { slug: "image-to-pdf", text: "Need the smaller photo inside a PDF? Use Image to PDF." },
+      { slug: "pdf-to-image", text: "Have the photo inside a PDF? Take it out as a picture with PDF to Image, then resize it here." },
+    ],
+    guides: ["reduce-image-size-to-100kb", "photo-and-signature-size-for-online-forms"],
+    related: ["image-to-pdf", "pdf-to-image"],
   },
 ];
 
