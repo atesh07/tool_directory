@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import GuideArticle from "@/components/seo/GuideArticle";
-import { GUIDES, getGuide, guidePath } from "@/data/guides";
+import { GUIDES, getGuide, getHiAlternate, guidePath, hiGuidePath } from "@/data/guides";
 import { buildMetadata } from "@/lib/seo";
 
 export const dynamicParams = false;
@@ -12,7 +12,14 @@ export function generateStaticParams() {
 export function generateMetadata({ params }: { params: { slug: string } }) {
   const guide = getGuide(params.slug);
   if (!guide) return {};
-  return buildMetadata({ title: guide.title, description: guide.description, path: guidePath(guide.slug), type: "article" });
+  const hindi = getHiAlternate(guide.slug);
+  return buildMetadata({
+    title: guide.title,
+    description: guide.description,
+    path: guidePath(guide.slug),
+    type: "article",
+    languages: hindi && { en: guidePath(guide.slug), hi: hiGuidePath(hindi.slug) },
+  });
 }
 
 export default function GuidePage({ params }: { params: { slug: string } }) {

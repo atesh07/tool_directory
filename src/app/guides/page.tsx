@@ -5,8 +5,8 @@ import { getTool } from "@/data/tools";
 import { absoluteUrl, breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "PDF Guides and Tutorials",
-  description: "Practical, step-by-step guides for everyday PDF jobs: merge, split, edit, rotate, delete pages and convert, with the limits explained honestly.",
+  title: "PDF, Image and URL Guides",
+  description: "Step-by-step guides for everyday jobs: merge, split and edit PDFs, shrink photos to 100KB for forms, and read encoded URLs, with the limits explained honestly.",
   path: "/guides",
 });
 

@@ -23,6 +23,8 @@ export type Guide = {
   body: Block[];
   /** Slugs of other guides in the same language */
   related: string[];
+  /** Hindi guides only: slug of the English guide on the same job, linked with hreflang */
+  alternate?: string;
 };
 
 export const guidePath = (slug: string) => `/guides/${slug}`;
@@ -503,6 +505,7 @@ export const HI_GUIDES: Guide[] = [
   {
     slug: "pdf-merge-kaise-kare",
     lang: "hi",
+    alternate: "merge-pdf-files-without-uploading",
     title: "PDF फाइलें एक साथ कैसे जोड़ें (मोबाइल और लैपटॉप पर)",
     description:
       "कई PDF फाइलों को एक में जोड़ने का आसान तरीका। कुछ इंस्टॉल करने की जरूरत नहीं, फाइल अपलोड नहीं होती। मोबाइल और लैपटॉप दोनों पर।",
@@ -556,6 +559,7 @@ export const HI_GUIDES: Guide[] = [
   {
     slug: "jpg-ko-pdf-kaise-banaye",
     lang: "hi",
+    alternate: "photos-to-pdf-on-your-phone",
     title: "फोटो (JPG) को PDF कैसे बनाएं: मोबाइल पर आसान तरीका",
     description:
       "फोन से खींची फोटो या स्क्रीनशॉट से एक PDF बनाएं, सही क्रम और सीधी दिशा में। मुफ्त है और फोटो अपलोड नहीं होती।",
@@ -611,6 +615,7 @@ export const HI_GUIDES: Guide[] = [
   {
     slug: "pdf-se-page-kaise-hataye",
     lang: "hi",
+    alternate: "delete-pages-from-a-pdf",
     title: "PDF से फालतू पेज कैसे हटाएं",
     description:
       "PDF में से खाली या गैर-जरूरी पेज हटाने का आसान तरीका। पेज देखकर चुनें और नई PDF डाउनलोड करें। मुफ्त और सुरक्षित।",
@@ -656,3 +661,4 @@ export const HI_GUIDES: Guide[] = [
 
 export const getGuide = (slug: string) => GUIDES.find((g) => g.slug === slug);
 export const getHiGuide = (slug: string) => HI_GUIDES.find((g) => g.slug === slug);
+export const getHiAlternate = (enSlug: string) => HI_GUIDES.find((g) => g.alternate === enSlug);

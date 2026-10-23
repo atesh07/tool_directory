@@ -38,7 +38,7 @@ src/app/tools/<tool>/      page.tsx (server, SEO) and ToolClient.tsx (runs in th
 scripts/seo-check.mjs      the SEO checker behind `npm run seo:check`
 ```
 
-To add a tool: add an entry to `src/data/tools.ts`, create `src/app/tools/<slug>/` with the same two files as another tool, and it gets its menu link, sitemap entry, title, description, share card and structured data automatically.
+To add a tool: add an entry to `src/data/tools.ts`, create `src/app/tools/<slug>/` with the same two files as another tool, and it gets its menu link, sitemap entry, title, description, share card and structured data automatically. Set its `updated` date, and change that date whenever the page content really changes: the sitemap tells Google about it. A Hindi guide with the same job as an English one gets `alternate: "<english slug>"`, which adds hreflang links on both pages.
 
 ## Content
 

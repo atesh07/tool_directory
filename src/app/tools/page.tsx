@@ -4,8 +4,8 @@ import { CATEGORIES, COMING_SOON, TOOLS, toolPath } from "@/data/tools";
 import { absoluteUrl, breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "All Free PDF Tools",
-  description: "Browse all free ToolsTree PDF tools: edit PDF text, merge, split, rotate, remove pages, and convert between PDF, images and Word. No sign-up.",
+  title: "All Free Online Tools: PDF, Image & Developer",
+  description: "Every free ToolsTree tool: edit, merge, split and convert PDFs, resize images to 100KB, and encode or decode URL, Base64 and JSON. No sign-up.",
   path: "/tools",
 });
 

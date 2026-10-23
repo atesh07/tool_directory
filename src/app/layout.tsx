@@ -19,26 +19,26 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: `${SITE.name} - Free Online PDF Tools: Edit, Merge, Split & Convert`,
+    default: `${SITE.name} - Free Online PDF, Image & Developer Tools`,
     template: `%s | ${SITE.name}`,
   },
   description: SITE.description,
   applicationName: SITE.name,
-  keywords: ["pdf tools", "edit pdf", "merge pdf", "split pdf", "rotate pdf", "image to pdf", "pdf to jpg", "word to pdf", "free pdf tools online"],
+  keywords: ["pdf tools", "edit pdf", "merge pdf", "split pdf", "rotate pdf", "image to pdf", "pdf to jpg", "word to pdf", "free pdf tools online", "resize image to 100kb", "url decode", "base64 decode", "json formatter"],
   openGraph: {
     type: "website",
     locale: "en_US",
     siteName: SITE.name,
-    title: `${SITE.name} - Free Online PDF Tools`,
+    title: `${SITE.name} - Free Online PDF, Image & Developer Tools`,
     description: SITE.description,
     url: "/",
-    images: [{ url: "/og?title=Free%20Online%20PDF%20Tools", width: 1200, height: 630, alt: `${SITE.name} - Free Online PDF Tools` }],
+    images: [{ url: "/og?title=Free%20PDF%2C%20Image%20%26%20Developer%20Tools", width: 1200, height: 630, alt: `${SITE.name} - Free Online PDF, Image & Developer Tools` }],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} - Free Online PDF Tools`,
+    title: `${SITE.name} - Free Online PDF, Image & Developer Tools`,
     description: SITE.description,
-    images: ["/og?title=Free%20Online%20PDF%20Tools"],
+    images: ["/og?title=Free%20PDF%2C%20Image%20%26%20Developer%20Tools"],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
   // Paste the code from Google Search Console / Bing Webmaster into the environment variables

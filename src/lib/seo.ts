@@ -15,16 +15,18 @@ type PageMeta = {
   ogTitle?: string;
   locale?: string;
   type?: "website" | "article";
+  /** Same page in other languages, as { "en": path, "hi": path }; x-default points to the English one */
+  languages?: Record<string, string>;
 };
 
 /** Metadata shared by every page: canonical URL, Open Graph and Twitter card */
-export function buildMetadata({ title, description, path, keywords, noindex, ogTitle, locale = "en_US", type = "website" }: PageMeta): Metadata {
+export function buildMetadata({ title, description, path, keywords, noindex, ogTitle, locale = "en_US", type = "website", languages }: PageMeta): Metadata {
   const image = ogImage(ogTitle ?? title);
   return {
     title,
     description,
     keywords,
-    alternates: { canonical: path },
+    alternates: { canonical: path, languages: languages && { ...languages, "x-default": languages.en } },
     openGraph: {
       type,
       locale,

@@ -50,13 +50,15 @@ export type Tool = {
   reference?: { heading: string; intro: string; head: string[]; rows: string[][] };
   /** Wider tool area for editors */
   wide?: boolean;
+  /** Date the page content last really changed (YYYY-MM-DD), used by the sitemap */
+  updated: string;
 };
 
 export const SITE = {
   name: "ToolsTree",
-  tagline: "Free online PDF tools",
+  tagline: "Free online PDF, image and developer tools",
   description:
-    "Free online PDF tools that run in your browser: edit, merge, split, rotate, convert and manage PDFs without uploading your files.",
+    "Free online tools that run in your browser: edit, merge, split and convert PDFs, resize images to 100KB, and decode URL, Base64 and JSON. No uploads.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   // Shown on the Contact, Privacy and Terms pages. Set NEXT_PUBLIC_CONTACT_EMAIL to use another address.
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "ehteshamshaikh101@gmail.com",
@@ -93,6 +95,7 @@ export const CATEGORIES: { id: CategoryId; name: string; description: string }[]
 export const TOOLS: Tool[] = [
   {
     slug: "edit-pdf",
+    updated: "2026-10-22",
     name: "Edit PDF",
     category: "organize",
     title: "Edit PDF Text Online Free, Same Font",
@@ -164,6 +167,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "merge-pdf",
+    updated: "2026-10-22",
     name: "Merge PDF",
     category: "organize",
     title: "Merge PDF Files Online Free",
@@ -229,6 +233,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "split-pdf",
+    updated: "2026-10-22",
     name: "Split PDF",
     category: "organize",
     title: "Split PDF & Extract Pages Free",
@@ -293,6 +298,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "remove-pages",
+    updated: "2026-10-22",
     name: "Remove Pages",
     category: "organize",
     title: "Delete Pages from PDF Online Free",
@@ -357,6 +363,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "rotate-pdf",
+    updated: "2026-10-22",
     name: "Rotate PDF",
     category: "organize",
     title: "Rotate PDF Pages Online Free",
@@ -420,6 +427,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "image-to-pdf",
+    updated: "2026-10-22",
     name: "Image to PDF",
     category: "to-pdf",
     title: "JPG & PNG to PDF Converter Free",
@@ -487,6 +495,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "pdf-to-image",
+    updated: "2026-10-22",
     name: "PDF to Image",
     category: "from-pdf",
     title: "PDF to JPG Converter Online Free",
@@ -551,6 +560,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "word-to-pdf",
+    updated: "2026-10-22",
     name: "Word to PDF",
     category: "to-pdf",
     title: "Word to PDF Converter (DOCX) Free",
@@ -617,6 +627,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "url-encoder-decoder",
+    updated: "2026-10-22",
     name: "URL Encoder & Decoder",
     category: "web",
     title: "URL Decode & Encode Online Free",
@@ -715,6 +726,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "base64-encoder-decoder",
+    updated: "2026-10-22",
     name: "Base64 Encoder & Decoder",
     category: "web",
     title: "Base64 Encoder & Decoder Online Free",
@@ -774,6 +786,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "json-formatter",
+    updated: "2026-10-22",
     name: "JSON Formatter & Validator",
     category: "web",
     title: "JSON Formatter & Validator Online Free",
@@ -836,6 +849,7 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "resize-image-under-100kb",
+    updated: "2026-10-22",
     name: "Resize Image Under 100KB",
     category: "images",
     title: "Resize & Compress Image to 100KB Free",
