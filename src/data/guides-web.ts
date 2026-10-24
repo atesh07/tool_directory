@@ -430,4 +430,86 @@ export const WEB_GUIDES: Guide[] = [
       { t: "tip", text: "Keep the original photos. If the form asks again with different rules, start from the original rather than from a picture that was already made small." },
     ],
   },
+  {
+    slug: "make-passport-size-photo-at-home",
+    lang: "en",
+    title: "How to Make a Passport Size Photo at Home (35x45 mm)",
+    description:
+      "Make a 35x45 mm passport size photo at home with your phone: taking the photo, cropping the face, name and date, KB limits and printing 8 on a 4x6 sheet.",
+    intro:
+      "Most Indian forms, ID cards and many visa applications ask for a 35 x 45 mm photo. You can make one at home with a phone and print a full sheet at any photo shop for a few rupees. Here is how to get it right the first time.",
+    tool: "passport-size-photo-maker",
+    published: "2026-10-24",
+    updated: "2026-10-24",
+    related: ["photo-and-signature-size-for-online-forms", "reduce-image-size-to-100kb"],
+    body: [
+      { t: "h2", text: "The size: 35 x 45 mm" },
+      {
+        t: "table",
+        head: ["Measure", "Value"],
+        rows: [
+          ["Millimetres", "35 x 45 mm"],
+          ["Centimetres", "3.5 x 4.5 cm"],
+          ["Inches", "1.38 x 1.77 in"],
+          ["Pixels at 300 DPI", "413 x 531 px"],
+          ["Head, top of hair to chin", "About 32 to 36 mm"],
+        ],
+      },
+      { t: "p", text: "If your form gives a different size, in mm or in pixels, use the form's numbers. Rules differ between exams, departments and countries, and they change." },
+      { t: "h2", text: "Taking the photo" },
+      {
+        t: "ul",
+        items: [
+          "Stand about half a metre in front of a plain white or light wall. The tool does not change the background, so the wall is the background.",
+          "Face a window in daylight, so the light falls evenly on your face. Avoid light from behind you and harsh shadows.",
+          "Ask someone to hold the phone at your eye level, about 1 to 1.5 metres away. A selfie camera held close makes the nose look bigger.",
+          "Look straight at the camera with a neutral face, both ears visible if your form asks, eyes open, no filters or beauty mode.",
+          "Leave room above the head and below the shoulders. You will crop later.",
+        ],
+      },
+      { t: "h2", text: "Cropping it to 35 x 45 mm" },
+      {
+        t: "ol",
+        items: [
+          "Open the Passport Size Photo Maker and choose the photo.",
+          "Drag the photo and zoom (pinch on a phone) until the top of the hair touches the upper guide line and the chin touches the lower one.",
+          "Line up the nose with the middle line. Use Straighten if your head is tilted, and Brightness if the photo is dark.",
+          "If the form wants your name and the date on the photo, tick Add name and date and type them.",
+        ],
+      },
+      { t: "h2", text: "For an online form" },
+      {
+        t: "p",
+        text: "Under Single photo for online forms, pick the KB limit the form gives, for example 20 KB or 50 KB, and press Download photo. The tool keeps the best quality that fits and tells you the final size in KB and pixels. If the form also asks for exact pixel sizes, resize the downloaded photo with Resize & Compress Image to 100KB.",
+      },
+      { t: "h2", text: "For printing" },
+      {
+        t: "ol",
+        items: [
+          "Under Print sheet, choose 4 x 6 inch (8 photos) or A4 (30 photos), or type how many photos you want.",
+          "Press Download PDF. The PDF is made in exact millimetres.",
+          "At a photo shop, ask for a 4 x 6 (also called 4R or postcard size) glossy print of the PDF or JPG. At home, print the A4 PDF on photo paper.",
+          "In the print window choose Actual size or 100%. Fit to page, Shrink or borderless printing changes the size.",
+          "Measure one photo with a ruler. It should be 35 mm wide and 45 mm tall. Cut along the thin grey lines.",
+        ],
+      },
+      { t: "h2", text: "Name and date on the photo" },
+      {
+        t: "p",
+        text: "Some exam forms, such as many SSC and state exam forms, ask for the candidate's name and the date the photo was taken printed below the face. Others refuse photos with any text. Do what your notification says. The tool prints the name in bold and the date below it in a white strip, so the face is not covered.",
+      },
+      { t: "h2", text: "Common mistakes" },
+      {
+        t: "ul",
+        items: [
+          "The face is too small: zoom in until the head fills the space between the guide lines.",
+          "A coloured or busy background: take the photo again in front of a plain light wall.",
+          "Wrong print size: the print was set to Fit to page. Print again at Actual size.",
+          "Shadows on the face or wall: move away from the wall a little and face the light.",
+          "An old photo: many forms want a recent photo, often taken within the last few months.",
+        ],
+      },
+      { t: "tip", text: "For a new or renewed Indian passport, the photo is usually taken at the Passport Seva Kendra during your appointment, so check the official instructions before you print one for it." },
+    ],
+  },
 ];

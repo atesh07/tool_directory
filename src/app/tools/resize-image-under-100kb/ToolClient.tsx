@@ -6,6 +6,7 @@ import ErrorNotice from "@/components/tools/ErrorNotice";
 import UploadZone from "@/components/tools/UploadZone";
 import { beginWork, endWork } from "@/lib/crashGuard";
 import { downloadBlob } from "@/lib/download";
+import { canvasToJpeg as toBlob, checkImage, decodeImage as decode } from "@/lib/imageFile";
 
 const MAX_FILES = 20;
 const MAX_MB = 30;
@@ -27,44 +28,6 @@ type Item = {
 const kb = (bytes: number) => (bytes / 1024 >= 10 ? Math.round(bytes / 1024) : Math.round((bytes / 1024) * 10) / 10);
 const baseName = (n: string) => n.replace(/\.[^.]+$/, "") || "image";
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
-
-/** Checks the file before any work starts: size, kind, and the first bytes (a renamed file is caught here). */
-async function checkImage(file: File): Promise<string | null> {
-  if (file.size === 0) return `"${file.name}" is empty (0 bytes).`;
-  if (file.size > MAX_MB * 1024 * 1024) return `"${file.name}" is larger than ${MAX_MB} MB.`;
-  const b = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-  const jpg = b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
-  const png = b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47;
-  const webp = b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
-  const heic = String.fromCharCode(b[4], b[5], b[6], b[7]) === "ftyp" && /^(heic|heix|hevc|mif1|msf1)/.test(String.fromCharCode(b[8], b[9], b[10], b[11]));
-  if (heic) return `"${file.name}" is a HEIC photo, which is not supported. Share or save it as JPG first.`;
-  if (!jpg && !png && !webp) return `"${file.name}" is not a JPG, PNG or WebP image, or it is damaged.`;
-  return null;
-}
-
-async function decode(file: File): Promise<{ source: CanvasImageSource; width: number; height: number; close: () => void }> {
-  if (typeof createImageBitmap === "function") {
-    try {
-      const bmp = await createImageBitmap(file);
-      return { source: bmp, width: bmp.width, height: bmp.height, close: () => bmp.close() };
-    } catch {
-      // fall through to the image element
-    }
-  }
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    img.src = url;
-    await img.decode();
-    return { source: img, width: img.naturalWidth, height: img.naturalHeight, close: () => URL.revokeObjectURL(url) };
-  } catch (e) {
-    URL.revokeObjectURL(url);
-    throw e;
-  }
-}
-
-const toBlob = (canvas: HTMLCanvasElement, quality: number) =>
-  new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("canvas"))), "image/jpeg", quality));
 
 type Settings = { limit: number; maxW: number; maxH: number; keepDims: boolean };
 
@@ -168,7 +131,7 @@ export default function ToolClient() {
     const picked = files.slice(0, Math.max(0, room));
     const problems: string[] = [];
     if (files.length > picked.length) problems.push(`Only ${MAX_FILES} photos can be added at a time.`);
-    const checks = await Promise.all(picked.map(checkImage));
+    const checks = await Promise.all(picked.map((f) => checkImage(f, MAX_MB)));
     const ok: Item[] = [];
     picked.forEach((file, i) => {
       if (checks[i]) problems.push(checks[i] as string);

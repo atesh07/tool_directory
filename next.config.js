@@ -12,7 +12,10 @@ const nextConfig = {
   poweredByHeader: false,
   // Short address people may type: send it to the tool page
   async redirects() {
-    return [{ source: "/resize-image-under-100kb", destination: "/tools/resize-image-under-100kb", permanent: true }];
+    return [
+      { source: "/resize-image-under-100kb", destination: "/tools/resize-image-under-100kb", permanent: true },
+      { source: "/passport-size-photo-maker", destination: "/tools/passport-size-photo-maker", permanent: true },
+    ];
   },
   webpack: (config) => {
     config.resolve.alias.canvas = false;

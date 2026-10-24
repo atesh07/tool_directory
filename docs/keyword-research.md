@@ -63,3 +63,18 @@ Check in Search Console after 6 to 8 weeks which of these groups get impressions
 Not done on purpose: separate pages for 20 KB, 30 KB and 50 KB. They would repeat the same content. Look at Search Console first and only split a size out if it gets its own impressions.
 
 **Second list, same day:** 35 searches, nearly all repeats. The missing wordings (image compressor 100kb, jpg / jpeg compressor, reduce photo size to 100kb, resize image to 100kb online, image size 100 kb, photo resize in 30 kb, and others) were added to the tool keywords, and two FAQ entries cover "online JPG/JPEG compressor" and "reduce photo size online". Watermark PDF is still not built, so those two searches remain open.
+
+## Passport size photo maker (built 24 Oct 2026)
+
+No owner list for this one yet; the searches below are common Indian wordings and should be checked against Search Console.
+
+| Group | Searches (examples) | Where it is answered |
+|---|---|---|
+| Maker, online, India | passport size photo maker, passport size photo online, passport photo maker india | Tool title "Passport Size Photo Maker Online (35x45 mm) Free", intro, about |
+| Size in units | 35x45 mm photo, 3.5 x 4.5 cm, passport size photo size in cm / pixels, 413x531 | Reference table on the tool page, FAQ, guide table |
+| Name and date | passport photo with name and date, photo for ssc | Name and date option, FAQ, guide section |
+| Print sheet | 8 passport photos on 4x6, a4 sheet, passport size photo print | 4x6 and A4 sheets, FAQ, guide "How to Make a Passport Size Photo at Home" |
+| KB limit | passport photo in 20kb, 50kb, for online form | KB buttons in the tool, FAQ, link to the 100KB resizer |
+| Hindi | passport size photo kaise banaye, mobile se passport size photo | Hindi guide /hi/guides/passport-size-photo-kaise-banaye |
+
+Not claimed: Passport Seva rules. The page says the passport office usually takes the photo itself and points to the official site. Not built: background removal, 2x2 inch (US) size.

@@ -5,7 +5,7 @@ import { absoluteUrl, breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "All Free Online Tools: PDF, Image & Developer",
-  description: "Every free ToolsTree tool: edit, merge, split and convert PDFs, resize images to 100KB, and encode or decode URL, Base64 and JSON. No sign-up.",
+  description: "Every free ToolsTree tool: edit, merge, split and convert PDFs, make passport size photos, resize images to 100KB, and encode or decode URL, Base64 and JSON. No sign-up.",
   path: "/tools",
 });
 
