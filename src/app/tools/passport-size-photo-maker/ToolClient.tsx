@@ -1,33 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, FileText, Loader2, RotateCcw, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
+import CropFrame, { FaceGuide } from "@/components/tools/CropFrame";
 import ErrorNotice from "@/components/tools/ErrorNotice";
 import UploadZone from "@/components/tools/UploadZone";
 import { beginWork, endWork } from "@/lib/crashGuard";
 import { downloadBlob } from "@/lib/download";
-import { canvasToJpeg, checkImage, decodeImage, withJpegDpi } from "@/lib/imageFile";
+import { canvasToJpeg, checkImage, withJpegDpi } from "@/lib/imageFile";
+import { MAX_ZOOM, START_VIEW as START, clampView, photoHeight, prepareImage, releaseWork, renderFrame as render, type Label, type View, type Work } from "@/lib/photoFrame";
 
 const MAX_MB = 30;
-const MAX_PIXELS = 100_000_000; // refuse pictures the browser could not hold in memory
 const DPI = 300;
 const MM_W = 35;
 const MM_H = 45;
 const PX_W = 413; // 35 mm at 300 DPI
 const PX_H = 531; // 45 mm at 300 DPI
-const WORK_MAX = 2000; // the photo is reduced to this once; enough detail for 4x zoom at print size
-const MAX_ZOOM = 4;
-const BAND = 0.18; // share of the height used by the name and date strip
 const KB_OPTIONS = [0, 20, 50, 100, 200]; // 0 means no limit
 const GAP = 2; // mm between photos on a sheet, room for the scissors
 
-type Work = { source: HTMLCanvasElement; width: number; height: number };
-/** Zoom, shift (as a share of the frame width), quarter turns, fine tilt in degrees, brightness in percent */
-type View = { zoom: number; x: number; y: number; turns: number; tilt: number; light: number };
-type Label = { name: string; date: string };
 type Sheet = { id: "4x6" | "a4"; label: string; file: string; w: number; h: number; margin: number };
 
-const START: View = { zoom: 1, x: 0, y: 0, turns: 0, tilt: 0, light: 0 };
 const SHEETS: Sheet[] = [
   { id: "4x6", label: "4 x 6 inch photo paper", file: "4x6", w: 152.4, h: 101.6, margin: 3 },
   { id: "a4", label: "A4 paper", file: "a4", w: 210, h: 297, margin: 8 },
@@ -40,133 +33,6 @@ function layout(sheet: Sheet) {
   const top = (sheet.h - (rows * MM_H + (rows - 1) * GAP)) / 2;
   const spot = (i: number) => ({ x: left + (i % cols) * (MM_W + GAP), y: top + Math.floor(i / cols) * (MM_H + GAP) });
   return { max: cols * rows, spot };
-}
-
-const photoHeight = (H: number, label: boolean) => (label ? Math.round(H * (1 - BAND)) : H);
-
-/** Scale and allowed shift that keep the frame fully covered by the photo, whatever the zoom and angle. */
-function geometry(iw: number, ih: number, W: number, H: number, v: View) {
-  const a = ((v.turns * 90 + v.tilt) * Math.PI) / 180;
-  const c = Math.abs(Math.cos(a));
-  const s = Math.abs(Math.sin(a));
-  const bw = W * c + H * s; // the frame, seen along the photo's own axes
-  const bh = W * s + H * c;
-  const scale = Math.max(bw / iw, bh / ih) * v.zoom;
-  return { a, scale, slackX: (iw * scale - bw) / 2, slackY: (ih * scale - bh) / 2 };
-}
-
-/** Keeps the zoom in range and stops the photo from being dragged so far that white shows at an edge. */
-function clampView(v: View, img: Work, W: number, H: number): View {
-  const zoom = Math.min(MAX_ZOOM, Math.max(1, v.zoom));
-  const g = geometry(img.width, img.height, W, H, { ...v, zoom });
-  const dx = v.x * W;
-  const dy = v.y * W;
-  const cos = Math.cos(g.a);
-  const sin = Math.sin(g.a);
-  const u = Math.max(-g.slackX, Math.min(g.slackX, dx * cos + dy * sin));
-  const w = Math.max(-g.slackY, Math.min(g.slackY, -dx * sin + dy * cos));
-  return { ...v, zoom, x: (u * cos - w * sin) / W, y: (u * sin + w * cos) / W };
-}
-
-/** Draws the finished photo (and the name strip, if any) at any pixel size with the same framing. */
-function render(canvas: HTMLCanvasElement, img: Work, W: number, H: number, view: View, label: Label | null) {
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("canvas");
-  const ph = photoHeight(H, !!label);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, W, H);
-
-  const v = clampView(view, img, W, ph);
-  const g = geometry(img.width, img.height, W, ph, v);
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, 0, W, ph);
-  ctx.clip();
-  ctx.translate(W / 2 + v.x * W, ph / 2 + v.y * W);
-  ctx.rotate(g.a);
-  ctx.scale(g.scale, g.scale);
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img.source, -img.width / 2, -img.height / 2);
-  ctx.restore();
-
-  if (v.light) {
-    // Done by hand because canvas filters are missing in some Safari versions
-    const f = 1 + v.light / 100;
-    const data = ctx.getImageData(0, 0, W, ph);
-    const p = data.data;
-    for (let i = 0; i < p.length; i += 4) {
-      p[i] = Math.min(255, p[i] * f);
-      p[i + 1] = Math.min(255, p[i + 1] * f);
-      p[i + 2] = Math.min(255, p[i + 2] * f);
-    }
-    ctx.putImageData(data, 0, 0);
-  }
-
-  if (label) {
-    const band = H - ph;
-    ctx.fillStyle = "#000000";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    const line = (text: string, size: number, weight: string, y: number) => {
-      if (!text) return;
-      let s = size;
-      ctx.font = `${weight} ${s}px Arial, Helvetica, sans-serif`;
-      while (s > 6 && ctx.measureText(text).width > W * 0.94) {
-        s -= 1;
-        ctx.font = `${weight} ${s}px Arial, Helvetica, sans-serif`;
-      }
-      ctx.fillText(text, W / 2, y);
-    };
-    const both = label.name && label.date;
-    line(label.name, Math.round(band * 0.34), "bold", ph + band * (both ? 0.32 : 0.5));
-    line(label.date, Math.round(band * 0.28), "normal", ph + band * (both ? 0.74 : 0.5));
-  }
-}
-
-/** Reads the photo once and keeps a smaller copy, so moving and zooming stay smooth on phones. */
-async function prepare(file: File): Promise<Work> {
-  const img = await decodeImage(file);
-  const temp: HTMLCanvasElement[] = [];
-  try {
-    if (!img.width || !img.height) throw new Error("size");
-    if (img.width * img.height > MAX_PIXELS) throw new Error("pixels");
-    const r = Math.min(1, WORK_MAX / Math.max(img.width, img.height));
-    const tw = Math.max(1, Math.round(img.width * r));
-    const th = Math.max(1, Math.round(img.height * r));
-    let src: CanvasImageSource = img.source;
-    let w = img.width;
-    let h = img.height;
-    // Halve in steps: one big jump down makes the picture grainy in some browsers
-    while (w / 2 >= tw) {
-      const c = document.createElement("canvas");
-      c.width = Math.round(w / 2);
-      c.height = Math.round(h / 2);
-      const ctx = c.getContext("2d");
-      if (!ctx) throw new Error("canvas");
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(src, 0, 0, c.width, c.height);
-      temp.push(c);
-      src = c;
-      w = c.width;
-      h = c.height;
-    }
-    const out = document.createElement("canvas");
-    out.width = tw;
-    out.height = th;
-    const ctx = out.getContext("2d");
-    if (!ctx) throw new Error("canvas");
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(src, 0, 0, tw, th);
-    return { source: out, width: tw, height: th };
-  } finally {
-    img.close();
-    temp.forEach((c) => {
-      c.width = 0;
-      c.height = 0;
-    });
-  }
 }
 
 /** Single photo under a size limit: best quality first, then a smaller picture if quality alone is not enough. */
@@ -243,10 +109,6 @@ export default function ToolClient() {
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const frameRef = useRef<HTMLDivElement>(null);
-  const pointers = useRef(new Map<number, { x: number; y: number }>());
-
   const label: Label | null = labelOn ? { name: name.trim(), date: date.trim() } : null;
   const ph = photoHeight(PX_H, labelOn);
   const sheet = SHEETS.find((s) => s.id === sheetId) as Sheet;
@@ -256,40 +118,11 @@ export default function ToolClient() {
   // Date on the client only, so the server and browser render the same first HTML
   useEffect(() => setDate(today()), []);
 
-  // Redraw the preview at print size whenever anything changes
-  useEffect(() => {
-    if (!work || !canvasRef.current) return;
-    const id = requestAnimationFrame(() => {
-      try {
-        if (canvasRef.current) render(canvasRef.current, work, PX_W, PX_H, view, labelOn ? { name: name.trim(), date: date.trim() } : null);
-      } catch {
-        /* a failed preview frame is redrawn on the next change */
-      }
-    });
-    return () => cancelAnimationFrame(id);
-  }, [work, view, labelOn, name, date]);
-
   const update = (fn: (v: View) => View) => {
     if (!work) return;
     setView((v) => clampView(fn(v), work, PX_W, ph));
     setInfo("");
   };
-  const updateRef = useRef(update);
-  updateRef.current = update;
-
-  // Mouse wheel zooms; it has to be a non-passive listener to stop the page from scrolling
-  useEffect(() => {
-    const el = frameRef.current;
-    if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const f = e.deltaY < 0 ? 1.06 : 1 / 1.06;
-      updateRef.current((v) => ({ ...v, zoom: v.zoom * f }));
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [work]);
-
   const open = async (files: File[]) => {
     const file = files[0];
     if (!file) return;
@@ -302,12 +135,9 @@ export default function ToolClient() {
     }
     setLoading(true);
     try {
-      const next = await prepare(file);
+      const next = await prepareImage(file);
       setWork((old) => {
-        if (old) {
-          old.source.width = 0;
-          old.source.height = 0;
-        }
+        releaseWork(old);
         return next;
       });
       setView(START);
@@ -316,50 +146,6 @@ export default function ToolClient() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const map = pointers.current;
-    const prev = map.get(e.pointerId);
-    if (!prev) return;
-    const width = e.currentTarget.getBoundingClientRect().width || 1;
-    if (map.size === 1) {
-      const dx = (e.clientX - prev.x) / width;
-      const dy = (e.clientY - prev.y) / width;
-      update((v) => ({ ...v, x: v.x + dx, y: v.y + dy }));
-    } else if (map.size === 2) {
-      // Pinch: zoom by how much the distance between the two fingers changed
-      const other = Array.from(map.entries()).find(([id]) => id !== e.pointerId)?.[1];
-      if (other) {
-        const before = Math.hypot(prev.x - other.x, prev.y - other.y);
-        const after = Math.hypot(e.clientX - other.x, e.clientY - other.y);
-        if (before > 0) update((v) => ({ ...v, zoom: v.zoom * (after / before) }));
-      }
-    }
-    map.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  };
-  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    pointers.current.delete(e.pointerId);
-  };
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const step = e.shiftKey ? 0.05 : 0.01;
-    const moves: Record<string, (v: View) => View> = {
-      ArrowLeft: (v) => ({ ...v, x: v.x - step }),
-      ArrowRight: (v) => ({ ...v, x: v.x + step }),
-      ArrowUp: (v) => ({ ...v, y: v.y - step }),
-      ArrowDown: (v) => ({ ...v, y: v.y + step }),
-      "+": (v) => ({ ...v, zoom: v.zoom * 1.06 }),
-      "=": (v) => ({ ...v, zoom: v.zoom * 1.06 }),
-      "-": (v) => ({ ...v, zoom: v.zoom / 1.06 }),
-    };
-    const fn = moves[e.key];
-    if (!fn) return;
-    e.preventDefault();
-    update(fn);
   };
 
   /** Runs one export and turns any failure into a plain message */
@@ -451,9 +237,6 @@ export default function ToolClient() {
       }
     });
 
-  const top = ph * 0.08;
-  const chin = ph * 0.8;
-
   return (
     <div className="space-y-5">
       <ErrorNotice message={error} onDismiss={() => setError(null)} />
@@ -474,34 +257,15 @@ export default function ToolClient() {
         <>
           <div className="grid gap-6 md:grid-cols-[auto,1fr]">
             <div className="mx-auto w-[260px] sm:w-[300px]">
-              <div
-                ref={frameRef}
-                tabIndex={0}
-                role="group"
-                aria-label="Photo position. Drag to move, pinch or scroll to zoom. With the keyboard, use the arrow keys to move and plus or minus to zoom."
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
-                onKeyDown={onKeyDown}
-                className="relative aspect-[35/45] w-full cursor-move touch-none select-none overflow-hidden border border-slate-300 bg-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066cc]"
-              >
-                <canvas ref={canvasRef} width={PX_W} height={PX_H} className="block h-full w-full" />
-                {guides && (
-                  <svg viewBox={`0 0 ${PX_W} ${PX_H}`} preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
-                    <g fill="none" stroke="#0066cc" strokeWidth="2" strokeDasharray="8 6" opacity="0.85">
-                      <ellipse cx={PX_W / 2} cy={(top + chin) / 2} rx={PX_W * 0.3} ry={(chin - top) / 2} />
-                      <line x1="0" x2={PX_W} y1={top} y2={top} />
-                      <line x1="0" x2={PX_W} y1={chin} y2={chin} />
-                      <line x1={PX_W / 2} x2={PX_W / 2} y1="0" y2={ph} />
-                    </g>
-                    <g fill="#0066cc" fontSize="18" fontFamily="Arial, sans-serif" fontWeight="bold">
-                      <text x="6" y={top - 6}>Top of head</text>
-                      <text x="6" y={chin + 20}>Chin</text>
-                    </g>
-                  </svg>
-                )}
-              </div>
+              <CropFrame
+                work={work}
+                view={view}
+                label={label}
+                width={PX_W}
+                height={PX_H}
+                onChange={update}
+                overlay={guides ? <FaceGuide width={PX_W} height={PX_H} photoH={ph} /> : null}
+              />
               <p className="mt-2 text-center text-xs text-slate-500">35 x 45 mm. Drag to move, pinch or scroll to zoom.</p>
             </div>
 

@@ -1,19 +1,27 @@
+export type ImageKind = "jpg" | "png" | "webp" | "heic";
+
+/** Tells the real picture type from the first bytes, whatever the file name says */
+export async function sniffImage(file: Blob): Promise<ImageKind | null> {
+  const b = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpg";
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "png";
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return "webp";
+  if (String.fromCharCode(b[4], b[5], b[6], b[7]) === "ftyp" && /^(heic|heix|hevc|heim|heis|mif1|msf1)/.test(String.fromCharCode(b[8], b[9], b[10], b[11]))) return "heic";
+  return null;
+}
+
 /** Checks a picture before any work starts: size, kind, and the first bytes (a renamed file is caught here). */
-export async function checkImage(file: File, maxMB: number): Promise<string | null> {
+export async function checkImage(file: File, maxMB: number, opts: { allowHeic?: boolean } = {}): Promise<string | null> {
   if (file.size === 0) return `"${file.name}" is empty (0 bytes).`;
   if (file.size > maxMB * 1024 * 1024) return `"${file.name}" is larger than ${maxMB} MB.`;
-  const b = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-  const jpg = b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
-  const png = b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47;
-  const webp = b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
-  const heic = String.fromCharCode(b[4], b[5], b[6], b[7]) === "ftyp" && /^(heic|heix|hevc|mif1|msf1)/.test(String.fromCharCode(b[8], b[9], b[10], b[11]));
-  if (heic) return `"${file.name}" is a HEIC photo, which is not supported. Share or save it as JPG first.`;
-  if (!jpg && !png && !webp) return `"${file.name}" is not a JPG, PNG or WebP image, or it is damaged.`;
+  const kind = await sniffImage(file);
+  if (kind === "heic" && !opts.allowHeic) return `"${file.name}" is a HEIC photo, which is not supported. Share or save it as JPG first.`;
+  if (!kind) return `"${file.name}" is not a JPG, PNG or WebP image, or it is damaged.`;
   return null;
 }
 
 /** Reads a picture into something a canvas can draw. Phone photos come out the right way up. */
-export async function decodeImage(file: File): Promise<{ source: CanvasImageSource; width: number; height: number; close: () => void }> {
+export async function decodeImage(file: Blob): Promise<{ source: CanvasImageSource; width: number; height: number; close: () => void }> {
   if (typeof createImageBitmap === "function") {
     try {
       const bmp = await createImageBitmap(file);

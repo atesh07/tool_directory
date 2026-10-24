@@ -78,3 +78,21 @@ No owner list for this one yet; the searches below are common Indian wordings an
 | Hindi | passport size photo kaise banaye, mobile se passport size photo | Hindi guide /hi/guides/passport-size-photo-kaise-banaye |
 
 Not claimed: Passport Seva rules. The page says the passport office usually takes the photo itself and points to the official site. Not built: background removal, 2x2 inch (US) size.
+
+## Exam Photo & Signature Resizer (built 24 Oct 2026)
+
+Hub `/exam-photo-resizer`, 18 exam pages `/exam-photo-resizer/<exam>` and 21 document pages `/exam-photo-resizer/<exam>/<document>` (signature, thumb, declaration) for exams that also upload a photo. All rules live in `src/data/exam-specs.ts`.
+
+Rules were read from the official notifications on 24 Oct 2026. Things to recheck with every new notification:
+
+| Exam | What to check | Why |
+|---|---|---|
+| RRB NTPC | Signature 30-49 KB, min 140x60 px | `verified: false`: read from mirror copies of CEN 06/2026 and 07/2026, not rrb*.gov.in |
+| SSC CGL, CHSL | Signature 6.0 x 2.0 cm | The notice also says 4.0 x 2.0 cm in one annexure; KB range is the same |
+| SSC CHSL, MTS | All | Numbers from the 2025 notices; 2026 notices not out yet |
+| NEET UG | Fingers and thumbs KB | Bulletin says 10-200 KB in one place and 50-300 KB in another; tool uses 50-200 KB |
+| JEE Main, NEET UG | All | 2027 bulletins not out yet |
+| UPSC (CSE, NDA, CDS) | Photo 20-200 KB, signature 20-100 KB, 350-500 px | Taken from the upsconline portal code, not the PDF |
+| GSSSB | Photo age and background | Only "15 KB max" is official; "white background, under 1 year" is from a secondary site and not used |
+
+Not claimed anywhere: name and date on the photo (no current notification asks for it), photo upload for SSC and RRB (both capture the photo live).

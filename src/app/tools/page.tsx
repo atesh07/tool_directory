@@ -59,6 +59,16 @@ export default function ToolsIndexPage() {
           ))}
         </div>
 
+        <Link
+          href="/exam-photo-resizer"
+          className="mt-14 block rounded-2xl border border-[#0066cc]/30 bg-white p-6 transition hover:shadow-lg"
+        >
+          <h2 className="text-xl font-semibold text-slate-900">Exam Photo & Signature Resizer</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Photo, signature and thumb impression in the exact size and KB range for SSC, UPSC, IBPS, SBI, RRB, NEET, JEE and Gujarat OJAS forms.
+          </p>
+        </Link>
+
         <p className="mt-14 text-center text-slate-600">
           Not sure which tool you need?{" "}
           <Link href="/guides" className="font-semibold text-[#0066cc] underline">

@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { SITE, TOOLS, toolPath } from "@/data/tools";
 import { GUIDES, HI_GUIDES, guidePath, hiGuidePath } from "@/data/guides";
+import { EXAMS, EXAMS_UPDATED, EXAM_HUB_PATH, examPath } from "@/data/exam-specs";
+import { docPagePath, docPages } from "@/lib/examContent";
 
 const siteUrl = SITE.url.replace(/\/$/, "");
 
@@ -41,5 +43,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...pages, ...tools, ...guides];
+  const exams = [
+    { url: `${siteUrl}${EXAM_HUB_PATH}`, lastModified: new Date(EXAMS_UPDATED()), changeFrequency: "monthly" as const, priority: 0.9 },
+    ...EXAMS.map((e) => ({ url: `${siteUrl}${examPath(e.slug)}`, lastModified: new Date(e.lastVerified), changeFrequency: "monthly" as const, priority: 0.8 })),
+    ...EXAMS.flatMap((e) =>
+      docPages(e).map((d) => ({ url: `${siteUrl}${docPagePath(e, d)}`, lastModified: new Date(e.lastVerified), changeFrequency: "monthly" as const, priority: 0.7 })),
+    ),
+  ];
+
+  return [...pages, ...tools, ...exams, ...guides];
 }

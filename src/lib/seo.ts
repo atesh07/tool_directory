@@ -73,16 +73,26 @@ export const websiteJsonLd = () => ({
   description: SITE.description,
 });
 
-export const softwareJsonLd = (tool: Tool) => ({
+export const webAppJsonLd = (name: string, path: string, description: string) => ({
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: `${tool.name} - ${SITE.name}`,
-  url: absoluteUrl(toolPath(tool.slug)),
-  description: tool.description,
+  name: `${name} - ${SITE.name}`,
+  url: absoluteUrl(path),
+  description,
   applicationCategory: "UtilitiesApplication",
   operatingSystem: "Any (web browser)",
   browserRequirements: "Requires JavaScript",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+});
+
+export const softwareJsonLd = (tool: Tool) => webAppJsonLd(tool.name, toolPath(tool.slug), tool.description);
+
+export const howToJsonLd = (name: string, steps: { title: string; text: string }[]) => ({
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name,
+  tool: { "@type": "HowToTool", name: "A phone or computer with a web browser" },
+  step: steps.map((s, i) => ({ "@type": "HowToStep", position: i + 1, name: s.title, text: s.text })),
 });
 
 export const faqJsonLd = (faq: Faq[]) => ({

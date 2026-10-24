@@ -193,12 +193,13 @@ export default function ToolPage({ slug, children }: { slug: string; children: R
         <ul className="space-y-2 text-slate-700">
           {tool.next.map((n) => {
             const t = getTool(n.slug);
-            if (!t) return null;
+            const name = n.name ?? t?.name;
+            if (!name) return null;
             return (
               <li key={n.slug}>
                 {n.text}{" "}
-                <Link href={toolPath(n.slug)} className="font-medium text-[#0066cc] underline">
-                  Open {t.name}
+                <Link href={n.href ?? toolPath(n.slug)} className="font-medium text-[#0066cc] underline">
+                  Open {name}
                 </Link>
               </li>
             );

@@ -42,8 +42,8 @@ export type Tool = {
   limits: string[];
   troubleshooting: { problem: string; fix: string }[];
   faq: Faq[];
-  /** Sentences that link to other tools inside the text */
-  next: { slug: string; text: string }[];
+  /** Sentences that link to other tools inside the text; `href` and `name` link to a page outside /tools */
+  next: { slug: string; text: string; href?: string; name?: string }[];
   /** Guides (slugs from data/guides.ts) shown on this page */
   guides: string[];
   related: string[];
@@ -944,6 +944,7 @@ export const TOOLS: Tool[] = [
       { slug: "image-to-pdf", text: "Need the smaller photo inside a PDF? Use Image to PDF." },
       { slug: "pdf-to-image", text: "Have the photo inside a PDF? Take it out as a picture with PDF to Image, then resize it here." },
       { slug: "passport-size-photo-maker", text: "Need the photo cut to 35 x 45 mm, or a print sheet? Use the Passport Size Photo Maker." },
+      { slug: "exam-photo-resizer", href: "/exam-photo-resizer", name: "Exam Photo & Signature Resizer", text: "Applying for SSC, UPSC, IBPS, SBI, RRB, NEET or an OJAS form? Get the exact size and KB range with the Exam Photo & Signature Resizer." },
     ],
     guides: ["reduce-image-size-to-100kb", "photo-and-signature-size-for-online-forms"],
     related: ["passport-size-photo-maker", "image-to-pdf", "pdf-to-image"],
@@ -1044,6 +1045,7 @@ export const TOOLS: Tool[] = [
     next: [
       { slug: "resize-image-under-100kb", text: "Need your signature under a KB limit too? Use Resize & Compress Image to 100KB." },
       { slug: "image-to-pdf", text: "Need the photo inside a PDF with other documents? Use Image to PDF." },
+      { slug: "exam-photo-resizer", href: "/exam-photo-resizer", name: "Exam Photo & Signature Resizer", text: "Uploading to an exam form with a KB range? Use the Exam Photo & Signature Resizer." },
     ],
     guides: ["make-passport-size-photo-at-home"],
     related: ["resize-image-under-100kb", "image-to-pdf"],

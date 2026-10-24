@@ -75,6 +75,13 @@ const Footer = () => {
                   ))}
                   {col.title === "Image & Web" && (
                     <li>
+                      <Link href="/exam-photo-resizer" className={linkClass}>
+                        Exam Photo & Signature Resizer
+                      </Link>
+                    </li>
+                  )}
+                  {col.title === "Image & Web" && (
+                    <li>
                       <Link href="/tools" className={`${linkClass} font-semibold text-[#0066cc]`}>
                         All tools →
                       </Link>
